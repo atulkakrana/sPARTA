@@ -1,5 +1,5 @@
 sPARTA: small RNA-PARE Target Analyzer Version 
-Updated: version-1.03 8/16/2014
+Updated: version-1.11 4/1/2015
 
 ======== Description ========
 small RNA-PARE Target Analyzer (sPARTA) is a tool which utilizes
@@ -14,12 +14,26 @@ sPARTA requires bowtie2 in the PATH variable of the user account executing sPART
 bowtie2 may be downloaded here http://bowtie-bio.sourceforge.net/bowtie2/index.shtml
 
 sPARTA requires the following python3 functions to perform properly:
-numpy
-pyfasta
-rpy2
-scipy
+numpy - http://www.numpy.org/
+pyfasta - https://pypi.python.org/pypi/pyfasta/
+rpy2 - http://rpy.sourceforge.net/
+scipy - http://www.scipy.org/
 
-These may easily be installed using (Python) PIP
+These may easily be installed using (Python) PIP. Intructions to install PIP - https://pip.pypa.io/en/stable/installing.html
+
+========= Note ===========
+1.
+sPARTA uses file extensions to identify file types, naming meta-data and selectively 
+cleaning up temp files. Therefore, it is recommended to have appropriate file extensions. 
+For Ex. a genome/cDNA FASTA file should have '.fa' extension. 
+Please see 'Arguments' section (below) for recommended file extensions.
+
+2.
+Make sure that input fasta files do not have integers in name. For ex - test.1.fa or arabidopsis.new.2.4.fa
+Files with such names are deleted sometimes while cleanup operation
+
+3.
+All the input files 1) miRNAs 2) FASTA file for genome or transcripts and 3) degradome/PARE in tag-count format should be in same directory,including sPARTA script
 
 ======== Execution ========
 There are command line arguments that are to be used by sPARTA for proper
@@ -28,22 +42,26 @@ once this has been completed, provided the miRNAs and genome are the same,
 the entire analysis will not need to be repeated. Examples of such cases
 may be seen below.
 
+
+
 ======= Arguments ========
 gffFile         GFF3 file for the species being analyzed corresponding
-...             to the genome assembly being used. 
+...             to the genome assembly being used. Recommended file
+				extension - '.gff' or '.gff3' 
 genomeFile      Genome file in FASTA format that will be used to extract 
-...             features (genic or intergenic regions) using GFF3 file
+...             features (genic or intergenic regions) using GFF3 file.
+				Recommended file extension - '.fa'
 
 featureFile		FASTA file containing sequences of interest (CDS, transcript,
 ...             intergenic regions etc.) if user already has a set of
 ...             sequences. This option is mutually exclusive to genome file and
 ...             gff file. So either genomefile along with gffFile is used or
-...             feature set is supplied directly.
+...             feature set is supplied directly. Recommended file extension - '.fa'
 
 genomeFeature   0 if prediction is to be done in genic region. 1 if prediction
 ...             is to be done in intergenic region
 
-miRNAFile       FASTA format of miRNA sequences
+miRNAFile       FASTA format of miRNA sequences. Recommended file extension - '.fa'
 tarPred         Mode of target prediction. H for heuristic. E for exhaustive.
 ...             H is default if no mode is specified
 tarScore        Scoring mode for target prediction. S for seedless. N for
@@ -103,7 +121,8 @@ python3 sPARTA.py -featureFile <featureFile.fa> -genomeFeature <0/1> -miRNAFile 
 
 ======== Output ==========
 1.  PARE validation results for each library can be found in 'output' folder
-    under its corresponding library name
+    under its corresponding library name. The 'output' folder also contains a combined result file (AllLibValidatedUniq.csv) from all the libraries. 
+    Results from all libs were combined by removing redundant miRNA-target interaction with cleavage at same site.
 
 2.  Target prediction results can be found in 'predicted' folder under the name
     'All.targs.parsed.csv'

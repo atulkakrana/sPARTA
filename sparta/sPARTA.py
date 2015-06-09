@@ -1,5 +1,5 @@
 ## sPARTA: small RNA-PARE Target Analyzer public version 
-## Updated: version-1.07 12/31/2014
+## Updated: Updated: version-1.11 4/1/2015
 ## Property of Meyers Lab at University of Delaware
 ## Author: kakrana@udel.edu
 
@@ -453,6 +453,7 @@ def miRinput():
         
     return miRs ##miRs holds the list of miRNA name and query where as miRtable holds flag -table name or local
 
+## Deprecated - Apr-1 [Retained for backward compatibility]
 def tarFind3(frag):
 
     file_out = './predicted/%s.targ' % (frag.rpartition('.')[0]) ## 
@@ -493,6 +494,10 @@ def tarFind3(frag):
             print ('''\nPlease choose correct target prediction mode - Heuristic (H) or Exhaustive (E)\n
                    System will exit now''')
             sys.exit()
+    else:
+        print("\n\nWARNING: Something wrong happened while generating or locating index files\n")
+        print("Script will exit for now\n")
+        sys.exit()
 
 
     if retcode2 == 0:#
@@ -502,6 +507,66 @@ def tarFind3(frag):
         print ("Script exiting.......")
         sys.exit()
 
+## New version added - Apr1/15
+def tarFind4(frag):
+    
+    file_out = './predicted/%s.targ' % (frag.rpartition('.')[0]) ## Result File
+    
+    ### Make or select index
+    index = "./index/%s_index" % (frag)
+    if args.indexStep:
+        print('**Creating index of cDNA/genomic sequences:%s\n**' % (index))
+        retcode = subprocess.call(["bowtie2-build", frag, index])
+
+    else: #
+        if os.path.isfile('%s.1.bt2' % index): #
+            retcode = 0
+            print('**Found index of cDNA/genomic sequences:%s\n**' % (index))
+        else:
+            print('**Could not find index of cDNA/genomic sequences:%s\n**' % (index))
+            sys.exit()
+            
+    if retcode == 0: ### Index creation sucessful or index already exists
+        print ('Predicting targets for frag:%s using index:%s' % (frag,index))
+        nspread2 = str(nspread)
+        if args.tarPred == 'H': ## Heurustic
+            print ("You chose 'Heuristic mode' for target identification")
+            intervalFunc = str("L,4,0.1")
+            minScoreFunc = str("L,-24,-0.5") ###~34.5 - 35 i.e 34 - Stable v1.08 
+            refGap= str("10,8") ## Bulge in miR  + 3MM, 2 seprate or consequite bulges filtered out later - - updated-Mar-23-15 - Can be (10,12) to gain speed - it will effect 1 gap and MM but make 2 gaps impossible
+            readGap = str("10,6") ## Bulge in tar + 3MM, 2bulge in tar + 2MM and no bulge 6MM updated-Mar-23-15,
+            misPen = str("6,2") ## Mismatch penalty, w/o phred score mx is used i.e. first one - can be changed to (5,2) to improve sensistivity - It will only effect 1 gap scenario and 2 gaps cases will be as is
+            matScore = str("0") ## Match score
+            retcode2 = subprocess.call(["bowtie2","-a","--end-to-end","-D 3","-R 2","-N 1","-L 8","-i",intervalFunc,"--rdg",readGap,"--rfg",refGap,"--mp",misPen,"--ma",matScore,"--min-score",minScoreFunc,"--norc","--no-hd","--no-unal","-p",nspread2, "-x", index, "-f" ,"miRinput_RevComp.fa","-S", file_out])
+        
+        elif args.tarPred == 'E': ##Exhaustive
+            print ("You chose 'Exhaustive mode' for target identification - Please be patient")
+            intervalFunc = str("L,2,0.1")
+            minScoreFunc = str("L,-24,-0.5") ### ~34.5 - 35 i.e 34 - Stable v1.08                      
+            refGap= str("10,8") ## Bulge in miR  + 3MM, 2 seprate or consequite bulges filtered out later - updated-Mar-23-15
+            readGap = str("10,4") ## Bulge in tar + 4MM, 2bulge in tar + 3MM and no bulge 6MM - updated-Mar-23-15,
+            misPen = str("5,2") ## Mismatch penalty, w/o phred score mx is used i.e. first one
+            matScore = str("0") ## Match score
+            retcode2 = subprocess.call(["bowtie2","-a","--end-to-end","-D 4","-R 2","-N 1","-L 6","-i",intervalFunc,"--rdg",readGap,"--rfg",refGap,"--mp",misPen,"--ma",matScore,"--min-score",minScoreFunc,"--norc","--no-hd","--no-unal","-p",nspread2, "-x", index,"-f", "miRinput_RevComp.fa","-S", file_out])
+        
+        else:
+            print ('''\nPlease choose correct target prediction mode - Heuristic (H) or Exhaustive (E)\n
+                   miRferno will exit now''')
+            sys.exit()
+    else:
+        print("There seems to be a problem with index generation of locating them - miRferno will exit now")
+        print("Try reruning the analysis with all steps to generate fresh files")
+        sys.exit()
+    
+    ### Check for proper completion of Target prediction
+    if retcode2 == 0:## The bowtie mapping exit with status 0, all is well
+                    print('\n miRNAs mapped to Fragment: %s' % (frag))
+    else:
+        print ("There is some problem with miRNA mapping '%s' to cDNA/genomic seq index" % (frag))
+        print ("Script exiting.......")
+        sys.exit()
+
+## Deprecated - Apr-1 [Retained for backward compatibility]
 def tarParse3(targComb):
     
     print ('\n**Target prediction results are being generated**')
@@ -635,9 +700,297 @@ def tarParse3(targComb):
     print("Total number of interactions from 'miRferno':%s AND total interactions scored: %s" % (acount,parseCount))
     fh_in.close()
     fh_out.close()
-    
-    
 
+    return TarPred
+
+#### New Version added - Apr1/15
+def tarParse4(targComb):
+
+    ''' Modifying this function is worst nightmare of life - Needs cleaning
+    cutoffs w/o bulge or gap - 5MM + 1 wobble 
+    bulge in miRNA - 1 bulge + 3MM
+    bulge in reference - 1bulge+4mm or 2 consequite bulges +3MM'''
+    
+    print ('\n**Target prediction results are being generated**')
+    ## Input / Output file ######
+    print ("File for parsing: '%s' in predicted folder\n" % (targComb))
+    fh_in = open(targComb,'r')
+    TarPred =  './predicted/%s.parsed.csv' % (targComb.rpartition('/')[-1]) ### Similar to parsed target finder format
+    fh_out = open(TarPred,'w')
+    fh_out.write('miRname,Target,BindSite,miRseq,tarSeq,Score,Mismatch,CIGAR\n')
+    
+    #acount = 0
+    #for i in fh_in:
+    #    print ('Check lines:%s' % (i))
+    #    acount +=1
+    #print ('Total lines read:',acount)
+    #sys.exit()
+    
+    #### Regenerate Target sequence with all features #####
+    acount = 0 ##Total number of interactions from predictions
+    parseCount = 0 ## Total number of interactions scores and written to result file
+    for i in fh_in:
+        # print("\nEntry:",i.strip("\n"))
+        acount += 1
+        ent = i.strip('\n').split('\t')
+        #print('\n%s\n' % ent)
+        miRrevcomp = ent[9]                 ## miRNA complemented and reversed to map genome using bowtie. That is target sequence if mismatches and gaps are added
+        tarHash = list(miRrevcomp)          ## Strings are immutable convert to list - To rebuilt a traget seq
+        # print("\nTarHash",tarHash)
+        
+        miRrev = miRrevcomp.translate(str.maketrans("TACG","AUGC")) ## Re-translated to get miR but still in reverse orientation - OK
+        mirHash = list(miRrev)
+        
+        #print('Original read mapped i.e miRNA revcomp',miRrevcomp)
+        
+        ## Gap and Bulges (with reference to miRNA) - Identify gaps and bulges and modify miRNA read used for mapping to regenerate target as well as miRNA
+        ## Add gap to target sequence  first to make miR length comparable to target
+        gapinfo = ent[5]
+        gappos = re.split("[A-Z]",gapinfo)   ## In python format - gap in target seq and bulge in miRNAseq
+        gapNuc = re.findall("[A-Z]",gapinfo)
+        # print("gappos:",gappos,"| gapNuc:",gapNuc)
+        
+        ###########################################################################################
+        ## SECTION - A - FIND GAPS AND BULGES AND ADD INDICATORS TO MIRNA OR TARGET SEQUENCES
+        ###########################################################################################
+
+        posCount = 0
+        ## At this point both mirHash and tarHash has same length and perfect complementrity as tarHash is essentially reverse complemented miRNA used for matching
+        for x,y in zip(gappos[:-1],gapNuc): ## In gap pos list which is made of alphabet splitting there is always am empty value at end because string has alphabet at last
+            # print(x,y)
+            if y == 'I':                    ## There was an insertion in miRNA and gap in reference and bulge in miRNA
+                for i in range(int(x)):     ## For as many as bulges in miRNA - like 11M 2I 11M              
+                    tarHash[posCount] = '-' ## Replace existing nucleotide (from revcomp miRNA) with a gap
+                posCount += int(x)          ## This only effects consequitve bulges in miR, if there are multiple insertions like 3I, then "3" needs to be added once and not in every iterneration
+            
+            elif y == 'D':                  ## There was a deletion in miRNA i.e. gap in miRNA and bulge in reference - In this case length of both miRNA and target will increase
+                for i in range(int(x)):             ## For as many as gaps in miRNA                
+                    mirHash.insert(posCount,'-')    ## When counted in python insertion will occur after posCount value -  Tested OK
+                    tarHash.insert(posCount,'^')    ## Add bulge markers in target sequence as well - Tested OK
+                posCount += int(x)                  ## This only effects consequitve gaps in miR, if there are multiple insertions like 3I, then "3" needs to be added once and not in every iterneration
+            
+            else:
+                posCount += int(x)
+        
+        # print('Target %s seq after manipulation: %s' % (ent[2],''.join(tarHash))) ## Has '-' at gap and '^' at extra nucleotide position (i.e. gap in MiR) -OK
+        # print('miRNA %s after after maipulations: %s' % (ent[0],''.join(mirHash))) ## Has '-' at gap pos -OK
+        
+        #########################################################################################
+        ## SECTION -B - GET CORRECT POSITIONS FOR MISMATCHES,GAPS AND BULGES 
+        ## AND REGENERATE TARGET BY INSERTING CORRECT NUCLETIDES AT EDITS AND BULGES
+        #########################################################################################
+        
+        ## Mismatches - Identify mismatches and modify miRNA read used for mapping to regenerate target
+        misinfoBlock = ent[-2].split(':')[-1] ## Reverse index because XS:i is optional column ## MD:Z:16C3 - these positions are from references - so if there is an insertion/bulge in miRNA i.e. gap that it should be added to these positions before editing miRNA to tar
+        # print ('This is the mismatch info block:%s' % (misinfoBlock))
+        
+        ## Deletion (gap) in miRNAS i.e y= D - which has been added but replace the bulge '^' in target with actual sequence
+        ## Should work if there is dletion in miRNA and deletion in traget i.e. two bulges one in miRNA and one in target - NO MM possible
+        if '^' in misinfoBlock: 
+            misinfo = misinfoBlock.replace('^','')          ## 11^A13 - Here miRNA was 24nt but misinfo shows 25nt as 11+A+13 - Replace the '^' inserted in target with 'A'
+            mispos = re.split("[A,T,G,C,N]",misinfo)        ## Found N in one case so included, N confimed in sequence too, will be counted as mismatch
+            # print('Mismatch info:%s | Mismatch pos:%s'%(misinfo,mispos))       
+
+            ## Add one to every position to get position where mismatch occured instead of position after which mismatch occured - This is an index and not position
+            misposCorrect = []                              ## List hold corrected positions, because edit is a nucleotide next to integers in misPos
+            # posIndex = -1                                   ## Index of position for misposCorrect, -1 because after first addition to list it will be incremented to 0
+            for x in mispos:
+                # print(x)
+                ## Assumption: There will be no empty entry in mispos at the begining, because there will be a position to indicate comsequtive edits, others are handled here
+                if x:
+                    misposCorrect.append(int(x)+1)          ## Add one to every position to get position where mismatch occured instead of position after which mismatch occured - This is an index and not position
+                    # posIndex +=1
+                else: ## If 'x' is empty like in case of three consequentive gaps in miRNA - Mismatch info:11GTA8 | Mismatch pos:['11', '', '', '8']
+                    # y = misposCorrect[posIndex]             ## Get the last corrected position, add one to get position for empty entry
+                    # misposCorrect.append(int(y)+1)          ## In consequitve edits this is position just next to last one
+                    # posIndex +=1
+                    misposCorrect.append(int(0)+1)
+
+            misNuc = re.findall("[A,T,G,C,N]",misinfo)      ## Found N in one case so included, N confirmed in sequence too, will be counted as mismatch
+            # print('Misafter:',mispos,'Mispos', misposCorrect,'MisNuc',misNuc)
+
+            ## Replace the nucleotides at bulges(^) and mismatches in tarHash to give actual targets
+            ## And also add nucleotide to target (replace ^) if gap in miRNA
+            #print('Unedited target:%s-%s' % (''.join(tarHash),len(''.join(tarHash))))
+            posCount = 0
+            for x,y in zip(misposCorrect,misNuc):
+                posCount += x                               ## Convert bowtie positions to python format
+                # print(x,y,posCount)
+                ## Account for gap before replacing the nucleotide with that in target
+                gaps = tarHash[:posCount-1-1].count('-')      ## -1 to convert to python, -1 because - count at positions in target before the current mismatch/bulge position
+                tarHash[posCount-1+gaps] = y                  ## Replaced the bulge or mimatch with nucleotide in target - OK
+        
+        else:   ## Normal i.e y = I - With insertion(bulge) in miRNA and gap in target - OK - What id there is a bulge in miRNA???
+                ## In this case miRNA already had inserted nucleltides and target has been added '-' in section-A. Just replace mimatches at correct postions of target
+            
+            misinfo = misinfoBlock
+            mispos = re.split("[A,T,G,C,N]",misinfo)        ## Found N in one case so included, N confimed in sequence too, will be counted as mismatch   
+            misposCorrect = [int(x)+1 for x in mispos]      ## Add one to every position to get position where mismatch occured instead of position after which mismatch occured - This is an index and not position
+            misNuc = re.findall("[A,T,G,C,N]",misinfo)      ## Found N in one case so included, N confirmed in sequence too, will be counted as mismatch
+            # print('Misafter:',mispos,'Mispos', misposCorrect,'MisNuc',misNuc)
+            
+            ## Count for gaps, since they are added by us and replace MM nucleotides to give actual targets
+            posCount = 0
+            for x,y in zip(misposCorrect,misNuc):
+                posCount += x                                 ## Keep adding the positions, as these are cumulative - MD:Z:2T12C4 - Misafter: ['2', '12', '4'] Mispos [3, 13, 5] MisNuc ['T', 'C'] - Tested OK
+                # print(x,y,posCount)
+                ## Account for gaps before replacing the nucleotide with that in target
+                ## Can give problem if more than one gap? But more than one gap not allowed V07 modification?
+                gaps = tarHash[:posCount-1-1].count('-')      ## -1 to convert to python,-1 because - count at positions in target before the current mismatch/bulge position
+                tarHash[posCount-1+gaps] = y                  ## TESTED - OK
+
+        tar = ''.join(tarHash).replace("T","U")             ## Target converted to RNA format, will help in catching wobbles ahead
+        mir = ''.join(mirHash)
+        bindsite = '%s-%d' % (ent[3],int(ent[3])+(len(miRrev)-1))
+        
+        # print ("Target:%s-%s | miRNA:%s-%s" % (tar,len(tar),mir,len(mir)))
+        
+        ###################################################################################
+        ## SECTION-C - GET POSITIONAL INFORMATION ON GAPS, MISMATCHES, WOBBLES AND BULGES 
+        ## AND CHOOSE VALID INTERACTIONS 
+        ###################################################################################
+
+        mirGap = [] ## List to hold gaps in miRNA
+        tarGap = [] ## List  to hold gap in targets
+        mis = []    ## List to hold mismatch position
+        wobble = [] ## List to hold Wobble pos
+        # print('miRNA: %s\n%s' % (miRrevcomp[::-1],miRrevcomp[::-1].replace("T","U") ))
+
+        ## Read from mapping file -> miRrevComp -> uncomplement -> miRrev -> morhash-> miR 
+        valid = 1 ## Validity flag [0] - Invalid and [1] - valid, if more then 1 bulges in miR or 2bulges in tar or bulges in 9,10,11 = invalid
+        nt_cnt = 1 ## Keep track of actual position,
+        for x,y in zip(mir.translate(str.maketrans("AUGC","UACG",))[::-1],tar[::-1]): ## Orientation changed to read from 5' miRNA - OK
+            
+            #print(miRrev[::-1][nt_cnt-1],x,y)## Print miRNA, rev complemmnetry miRNA used for matching, target
+            # if x == '-' or y == '-' or x == '^' or y == '^':
+            #     #print('gap')
+            #     gap.append(nt_cnt)
+            #     if y == '-':
+            #         nt_cnt+=1
+
+            if x == '-' or x == '^': ## Don't think '^' would be here, since it has been replaced with nucleotide
+                #print('miRNA gap')
+                mirGap.append(nt_cnt)
+                if nt_cnt == 9 or nt_cnt == 10 or nt_cnt == 11:
+                    # print("@miRNA has gap/bulge in 9th and 10th position")
+                    valid = 0 ## This is invalid as it has bulge in miRNA at 9th and 10th pos, this interaction will be skipped
+
+            elif y == '-' or y == '^':
+                #print('target gap')
+                tarGap.append(nt_cnt)
+                if y == '-': ## Don't think '^' would be here, since it has been replaced with nucleotide
+                    nt_cnt+=1
+                    if nt_cnt == 9 or nt_cnt == 10 or nt_cnt == 11:
+                        # print("@target has gap/bulge in 9th and 10th position")
+                        valid = 0 ## This is invalid as it has bulge in miRNA at 9th and 10th pos, this interaction will be skipped
+
+            elif x == 'A' and y == 'G': ### If in reference its 'G' than miRNA should have 'U' i.e. T but this is revcomplememnt of miRNA so complement of 'U' is A - Tested OK - v08 modifcation
+                #print ('wobble')
+                wobble.append(nt_cnt)
+                nt_cnt+=1
+            elif x == 'C' and y == 'U': ### If in reference its 'U' than miRNA should have 'G' but this is rev complememnt of miRNA so complement of 'G' is C - Tested OK - v08 modification
+                #print ('wobble')
+                wobble.append(nt_cnt)
+                nt_cnt+=1
+            elif x == y:
+                #print('match')
+                nt_cnt+=1
+            else:
+                #print('mismatch')
+                mis.append(nt_cnt)
+                nt_cnt+=1
+        # print('MismatchList:%s | miRGapList = %s | tarGapList = %s | WobbleList = %s' % (mis, mirGap, tarGap, wobble)) ## Poistion of mismatch gap and wobble
+
+        ## Check if there are more then mpermitted gaps in miRNA and target
+        if len(mirGap) > 2:
+            # print("@miRNA %s has more then two gaps" % (ent[0]))
+            valid = 0
+        elif len(tarGap) > 1:
+            # print("@target has more then one gap")
+            valid = 0
+        elif len(mis) > 5:
+            # print("More then 5 mismatches not allowed")
+            valid = 0
+        elif len(mis) + len(wobble) > 6: 
+            # print("Six edits are not allowed - It's too much")
+            valid = 0
+        else:
+            pass
+
+        ## Decide to report this interaction if its valid
+        ## Validity flag, if more then 1 bulges in miR or 2bulges in tar or bulges in 9,10,11 = invalid
+        if valid == 0: 
+            # print("Skipping this entry - It's biologically invalid\n")
+            continue ## Go to main for loop
+        else:
+            ## Go for scoring
+            pass
+
+        gap = mirGap+tarGap ## Combine gaps or scoring
+        
+        #####################################################################################
+        ## SECTION-D - SCORE THE INTERACTIONS 
+        #####################################################################################
+
+        score = 0   ## Initialize
+        #print (mis)
+        if args.tarScore == 'S': ## Allowed 3 MM, 2 Wob, 1 Gap
+            mis2 = list(mis)
+            #if set([10,11]).issubset(mis): ## Works well but took 1 sec more than below in Rice timed test
+            if 10 in mis and 11 in mis: ## Check for sunsequent mismatch at 10 and 11 if yes than strict penalty ## if set(['a','b']).issubset( ['b','a','foo','bar'] )
+                score += 2.5
+                #print('Removing 10')
+                mis2.remove(10)
+                #print ('Removing 11')
+                mis2.remove(11) ## So that they are not counted again
+                
+            for i in mis2:
+                    score += 1
+            for i in gap:
+                score += 1.5
+            for i in wobble:
+                if (i+1 in mis) or (i-1 in mis): ## Mismatches around wobble - Strong penalty
+                    score += 1.5
+                elif (i+1) in mis and (i-1 in mis): ## Mismatches on both sides - Stronger penalty
+                    score += 2
+                else:
+                    score += 0.5
+        else:
+            ##Heuristic and Exhaustive
+            for i in mis:
+                if i>= 2 and i<=13:
+                    score += 2
+                else:
+                    score += 1
+            for i in gap:
+                if i>= 2 and i<=13:
+                    score += 2
+                else:
+                    score += 1
+            for i in wobble:
+                if i>= 2 and i<=13:
+                    score += 1
+                    #print ('Wobble pos:%s' % (i))
+                else:
+                    score += 0.5
+                    #print ('Wobble pos:%s' % (i))
+        
+        ## Correctly output mismatches - If there is no mismatch then misinfo is just the length of match like - 15G2A1T1 (if there is mismatch) and 21(if no mismatch)
+        ## Since the second ouput which originally is part of mapping file confussing in mismatch column - take mismatch info from 'mis' list
+        
+        if mis or gap: ## If list of mismathes has positions of mismatches, then output the block from mapping file
+            mismatches = misinfo
+        else:
+            mismatches = 0
+
+        #print(ent[0],ent[2],bindsite,miRrev,tar,score,misinfo,gapinfo)## MiRname, Tarname, mirSeq,Taerseq,binding site
+        fh_out.write('>%s,%s,%s,%s,%s,%s,%s,%s\n' % (ent[0],ent[2],bindsite,mir.replace("U","T"),tar.replace("U","T"),score,mismatches,gapinfo))
+        parseCount  += 1
+    
+    
+    print("Total number of interactions from 'miRferno':%s AND total interactions scored: %s" % (acount,parseCount))
+    fh_in.close()
+    fh_out.close()
 
     return TarPred
 
@@ -1496,10 +1849,12 @@ def main():
         miRs = miRinput()
         start = time.time()###time start
         
-        #for i in fragList:
-        #    tarFind3(i)
+        ## Test mode - To find errors ###
+        # for i in fragList:
+        #    tarFind4(i)
+        
         ## Parallel mode
-        PP(tarFind3,fragList)
+        PP(tarFind4,fragList)
         end = time.time()
         print ('Target Prediction time: %s' % (round(end-start,2)))
         
@@ -1508,7 +1863,7 @@ def main():
         #targComb = 'All.targs' ## Test - open line above when real
         
         start = time.time()###time start
-        predTargets = tarParse3(targComb)
+        predTargets = tarParse4(targComb)
         end = time.time()
     
         #print ('Target Prediction time: %s' % (round(end-start,2)))
@@ -1518,7 +1873,7 @@ def main():
         #targComb = 'All.targs' ## Test - open line above when real
         
         start = time.time()###time start
-        predTargets = tarParse3(targComb)
+        predTargets = tarParse4(targComb)
         end = time.time()
         
         #print ('Target Scoring time: %s' % (round(end-start,2)))
@@ -1646,9 +2001,15 @@ def main():
             # 
             # 
             if(validatedTargets):
+                # print(validatedTargets)
                 print("Writing validated targets")
                 writeValidatedTargetsFile(header, validatedTargets,
                     validatedTargetsFilename)
+
+            else:
+                print("No targets could be validated for the set of miRNAs "\
+                      "in lib %s." % library)
+
     
     resultUniq()
     PredEnd = time.time()
@@ -1674,7 +2035,7 @@ if __name__ == '__main__':
     print('The run has completed sucessfully.....CHEERS! - Exiting..\n')
     sys.exit(0)
 
-## Changes
+## Change log
 ## Moved call to miRinput from outside of target prediction if clause to within to prevent sPARTA from looking for it when tarPred is off
 ## Unambiguous bases are now calculated during first run only and saved to file baseCounts.mem and pulled from there always durng validate step
 ## Changed last line to sys.exit(0)
@@ -1683,13 +2044,22 @@ if __name__ == '__main__':
 ## Reverse fix in miRferno, miRNA input moved to TF function, implemented frag memory files
 
 ## v1.03 -> 1.04
-## TarFind tweak, --cat4Filter is now --cat4Show
+## TarFind3 tweaked, --cat4Filter is now --cat4Show
 
 ## v1.04 -> 1.05
 ## Fixed compatibility to Bowtie 2.4.4 - Tested OK
 
-##v1,06 -> v1.07
+## v1.06 -> v1.07
 ## A final report with unique targets from all libraries generated
 ## Fix: Fixes Bug: 010115 - GFF file lines start with ##
 ## extractFeature bug updated from MPPP - scaffold fix
 ## File check and message display to rename genome file without integers
+## nthread changed to nspread
+
+## v1.07 -> 1.10 [Major update]
+## Two modules updated for improved target prediction and postprocessing to capture more secondary structures
+## Sensitivity improved for both Heuristic and Exhaustive modes [But not implemented in this script - Need to be tested for sconfidence score]
+## Added a filter whch throws our biologically invalid interactions
+
+## v1.10 -> v1.11rc [stable]
+## Fixed a bug introduced in v1.10 - 1) Fixed bugs with args in tarfind4 - Fixed 2) nspread got changed to nthred by mistake - Fixed
