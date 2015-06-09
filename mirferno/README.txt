@@ -1,5 +1,5 @@
 miRferno - miRNA-Target prediction module of sPARTA
-Updated: version-1.07 12/31/2014
+Updated: version-1.11 4/1/2015
 
 ======== Description ========
 miRferno is the miRNA-target prediction module of small RNA-PARE Target Analyzer (sPARTA).
@@ -11,18 +11,19 @@ miRferno requires bowtie2 in the PATH variable of the user account executing sPA
 bowtie2 may be downloaded here http://bowtie-bio.sourceforge.net/bowtie2/index.shtml
 
 miRferno requires the following python3 functions to perform properly:
-pyfasta
-
+pyfasta - https://pypi.python.org/pypi/pyfasta/
 
 ========= Note ===========
 miRFerno uses file extensions to identify file types, naming meta-data and selectively 
-cleaning up temp files.Therefore, it is recommended to have appropriate file extensions. 
-For Ex. a genome/cDNA FASTA file should have '.fa' extension.
+cleaning up temp files. Therefore, it is recommended to have appropriate file extensions. 
+For Ex. a genome/cDNA FASTA file should have '.fa' extension. Please see 'Arguments' section (below) for recommended file extensions.
 
+2.
 Make sure that input fasta files do not have integers in name. For ex - test.1.fa or arabidopsis.new.2.4.fa
 Files with such names are deleted sometimes while cleanup operation
 
-Please see 'Arguments' section (below) for recommended file extensions.
+3.
+All the input files 1) miRNAs 2) FASTA file for genome or transcripts and 3) degradome/PARE in tag-count format should be in same directory,including sPARTA script
 
 
 ======== Execution ========
