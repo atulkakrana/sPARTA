@@ -887,21 +887,21 @@ def tarParse4(targComb):
 
         ## Check if there are more then permitted gaps in miRNA and target
         # if len(mirGap) > 2:
-        if len(mirGap) > args.tarBul:
+        if len(mirGap) > int(args.tarBul):
             # print("@miRNA %s has more then two gaps" % (ent[0]))
             valid = 0
         # elif len(tarGap) > 1:
-        elif len(tarGap) > args.mirBul:
+        elif len(tarGap) > int(args.mirBul):
             # print("@target has more then one gap")
             valid = 0
         # elif len(mis) > 5:
-        elif len(mis) > args.misMat:
+        elif len(mis) > int(args.misMat):
             # print("More then 5 mismatches not allowed")
             valid = 0
-        elif len(wobble) > args.wob:
+        elif len(wobble) > int(args.wob):
             # print("More then 3 wobbles not allowed")
             valid = 0
-        elif len(mis) + len(wobble) > 6: 
+        elif (len(mis) + len(wobble)) > (int(args.misMat)+int(args.wob)): 
             # print(" More then six edits are not allowed - It's too much")
             valid = 0
         else:
