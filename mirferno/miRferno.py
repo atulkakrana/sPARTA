@@ -46,9 +46,11 @@ parser.add_argument('-accel', default='Y', help='Y to use '\
     'balanced multiple process scheme or else specify the number of '\
     'processors to be used. Y is default')
 parser.add_argument('-misMat', default=5, help='Set the number of '\
-    'mismatches allowed for predicting putative targets . 5 is default')
-parser.add_argument('-wob', default=3, help='Set the number of '\
-    'wobbles allowed for predicting putative targets . 3 is default')
+    'mismatches allowed for predicting putative targets . 5 is default'\
+    'with sum of mismatches and wobbles <= 6')
+parser.add_argument('-wob', default=5, help='Set the number of '\
+    'wobbles allowed for predicting putative targets . 5 is default'\
+    'with sum of mismatches and wobbles <= 6')
 parser.add_argument('-tarBul', default=2, help='Set the number bulged '\
     'nuleotides allowed in target for predicting putative targets . 2 is default,'\
     'i.e. max gaps allowed in miRNA')
@@ -901,7 +903,7 @@ def tarParse4(targComb):
         elif len(wobble) > int(args.wob):
             # print("More then 3 wobbles not allowed")
             valid = 0
-        elif (len(mis) + len(wobble)) > (int(args.misMat)+int(args.wob)): 
+        elif (len(mis) + len(wobble)) > 6: 
             # print(" More then six edits are not allowed - It's too much")
             valid = 0
         else:

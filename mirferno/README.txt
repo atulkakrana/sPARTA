@@ -67,7 +67,7 @@ may be seen below.
 ...		in miRNA. 1 is default value
 
 -tarBul		Maximum nucleotides allowed to form symmetrical and asymmetrical bulges
-...             in target. 1 is default value
+..             in target. 2 is default value
 
 tarScore        Scoring mode for target prediction. S for seedless. N for
 ...             normal. S is default if no mode is specified 
