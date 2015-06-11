@@ -58,16 +58,16 @@ may be seen below.
 ...             H is default if no mode is specified
 
 -misMat		Maximum mismatches allowed for target prediction. 5 is default value
-		with sum of mismatches and wobbles <= 6 
+...		with sum of mismatches and wobbles <= 6 
 
 -wob		Maximum wobbles allowed for target prediction. 5 is default value
-		with sum of mismatches and wobbles <= 6
+...		with sum of mismatches and wobbles <= 6
 
 -mirBul		Maximum nucleotides allowed to form symmetrical and asymmetrical bulges
-		in miRNA. 1 is default value
+...		in miRNA. 1 is default value
 
 -tarBul		Maximum nucleotides allowed to form symmetrical and asymmetrical bulges
-                in target. 1 is default value
+...             in target. 1 is default value
 
 tarScore        Scoring mode for target prediction. S for seedless. N for
 ...             normal. S is default if no mode is specified 
