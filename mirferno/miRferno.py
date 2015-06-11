@@ -1,5 +1,5 @@
 ## miRferno - miRNA-Target prediction module of sPARTA
-## Updated: version-1.11 4/1/2015
+## Updated: version-1.12rc 6/10/2015
 ## Property of Meyers Lab at University of Delaware
 ## Author: kakrana@udel.edu
 
@@ -45,6 +45,16 @@ parser.add_argument('--noiseFilter', action='store_false', default=True,
 parser.add_argument('-accel', default='Y', help='Y to use '\
     'balanced multiple process scheme or else specify the number of '\
     'processors to be used. Y is default')
+parser.add_argument('-misMat', default=5, help='Set the number of '\
+    'mismatches allowed for predicting putative targets . 5 is default')
+parser.add_argument('-wob', default=3, help='Set the number of '\
+    'wobbles allowed for predicting putative targets . 3 is default')
+parser.add_argument('-tarBul', default=2, help='Set the number bulged '\
+    'nuleotides allowed in target for predicting putative targets . 2 is default,'\
+    'i.e. max gaps allowed in miRNA')
+parser.add_argument('-mirBul', default=1, help='Set the number bulged '\
+    'nucleotides allowed in miRNA for predicting putative targets, '\
+    'i.e. max gaps allowed in target. 1 is default')
 
 ### Developer Options ###
 parser.add_argument('--generateFasta', action='store_true', default=False,
@@ -875,18 +885,24 @@ def tarParse4(targComb):
                 nt_cnt+=1
         # print('MismatchList:%s | miRGapList = %s | tarGapList = %s | WobbleList = %s' % (mis, mirGap, tarGap, wobble)) ## Poistion of mismatch gap and wobble
 
-        ## Check if there are more then mpermitted gaps in miRNA and target
-        if len(mirGap) > 2:
+        ## Check if there are more then permitted gaps in miRNA and target
+        # if len(mirGap) > 2:
+        if len(mirGap) > args.tarBul:
             # print("@miRNA %s has more then two gaps" % (ent[0]))
             valid = 0
-        elif len(tarGap) > 1:
+        # elif len(tarGap) > 1:
+        elif len(tarGap) > args.mirBul:
             # print("@target has more then one gap")
             valid = 0
-        elif len(mis) > 5:
+        # elif len(mis) > 5:
+        elif len(mis) > args.misMat:
             # print("More then 5 mismatches not allowed")
             valid = 0
+        elif len(wobble) > args.wob:
+            # print("More then 3 wobbles not allowed")
+            valid = 0
         elif len(mis) + len(wobble) > 6: 
-            # print("Six edits are not allowed - It's too much")
+            # print(" More then six edits are not allowed - It's too much")
             valid = 0
         else:
             pass
