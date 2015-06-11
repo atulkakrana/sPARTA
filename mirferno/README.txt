@@ -1,5 +1,5 @@
 miRferno - miRNA-Target prediction module of sPARTA
-Updated: version-1.11 4/1/2015
+Updated: version-1.12rc 6/10/2015
 
 ======== Description ========
 miRferno is the miRNA-target prediction module of small RNA-PARE Target Analyzer (sPARTA).
@@ -35,27 +35,39 @@ may be seen below.
 
 
 ======= Arguments ========
-gffFile         GFF3 file for the species being analyzed corresponding
+-gffFile        GFF3 file for the species being analyzed corresponding
 ...             to the genome assembly being used. Recommended file
 				extension - '.gff' or '.gff3' 
 
-genomeFile      Genome file in FASTA format that will be used to extract 
+-genomeFile     Genome file in FASTA format that will be used to extract 
 ...             features (genic or intergenic regions) using GFF3 file.
 				Recommended file extension - '.fa'
 
-featureFile		FASTA file containing sequences of interest (CDS, transcript,
+-featureFile	FASTA file containing sequences of interest (CDS, transcript,
 ...             intergenic regions etc.) if user already has a set of
 ...             sequences. This option is mutually exclusive to genome file and
 ...             gff file. So either genomefile along with gffFile is used or
 ...             feature set is supplied directly.Recommended file extension - '.fa'
 
-genomeFeature   0 if prediction is to be done in genic region. 1 if prediction
+-genomeFeature  0 if prediction is to be done in genic region. 1 if prediction
 ...             is to be done in intergenic region
 
-miRNAFile       FASTA format of miRNA sequences. Recommended file extension - '.fa'
+-miRNAFile      FASTA format of miRNA sequences. Recommended file extension - '.fa'
 
-tarPred         Mode of target prediction. H for heuristic. E for exhaustive.
+-tarPred        Mode of target prediction. H for heuristic. E for exhaustive.
 ...             H is default if no mode is specified
+
+-misMat		Maximum mismatches allowed for target prediction. 5 is default value
+		with sum of mismatches and wobbles <= 6 
+
+-wob		Maximum wobbles allowed for target prediction. 5 is default value
+		with sum of mismatches and wobbles <= 6
+
+-mirBul		Maximum nucleotides allowed to form symmetrical and asymmetrical bulges
+		in miRNA. 1 is default value
+
+-tarBul		Maximum nucleotides allowed to form symmetrical and asymmetrical bulges
+                in target. 1 is default value
 
 tarScore        Scoring mode for target prediction. S for seedless. N for
 ...             normal. S is default if no mode is specified 
