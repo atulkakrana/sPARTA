@@ -333,7 +333,7 @@ def getFASTA1(genomeFile,coords):
             gene_seq = chromo[start:end]  #
             #print(gene_seq)
             if strand == 'C':
-                gene_seq_rev = gene_seq[::-1].translate(str.maketrans("TAGC","ATGC"))
+                gene_seq_rev = gene_seq[::-1].translate(str.maketrans("TAGC","ATCG"))
                 fh_out.write('>%s\n%s\n' % (gene,gene_seq_rev))
             else:
                 fh_out.write('>%s\n%s\n' % (gene,gene_seq))
@@ -343,7 +343,7 @@ def getFASTA1(genomeFile,coords):
             gene_seq = chromo[start:]##
             #print(gene_seq)
             if strand == 'C':
-                gene_seq_rev = gene_seq[::-1].translate(str.maketrans("TAGC","ATGC"))
+                gene_seq_rev = gene_seq[::-1].translate(str.maketrans("TAGC","ATCG"))
                 fh_out.write('>%s\n%s\n' % (gene,gene_seq_rev))
                 
             else:
@@ -354,7 +354,7 @@ def getFASTA1(genomeFile,coords):
             gene_seq = chromo[start:end]##
             #print(gene_seq)
             if strand == 'C':
-                gene_seq_rev = gene_seq[::-1].translate(str.maketrans("TAGC","ATGC"))
+                gene_seq_rev = gene_seq[::-1].translate(str.maketrans("TAGC","ATCG"))
                 fh_out.write('>%s\n%s\n' % (gene,gene_seq_rev))
                 
             else:
