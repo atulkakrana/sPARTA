@@ -1,5 +1,5 @@
 ## sPARTA: small RNA-PARE Target Analyzer public version 
-## Updated: Updated: version-1.11 4/1/2015
+## Updated: Updated: version-1.12 30/6/2015
 ## Property of Meyers Lab at University of Delaware
 ## Author: kakrana@udel.edu
 
@@ -2063,3 +2063,6 @@ if __name__ == '__main__':
 
 ## v1.10 -> v1.11rc [stable]
 ## Fixed a bug introduced in v1.10 - 1) Fixed bugs with args in tarfind4 - Fixed 2) nspread got changed to nthred by mistake - Fixed
+
+## v1.11 -> v1.12
+## Fixed a bug introduced due to regresssin, effected fetching seqeunces for reverse strand

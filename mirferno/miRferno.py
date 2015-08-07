@@ -1,5 +1,5 @@
 ## miRferno - miRNA-Target prediction module of sPARTA
-## Updated: version-1.12rc 6/10/2015
+## Updated: version-1.12 6/30/2015
 ## Property of Meyers Lab at University of Delaware
 ## Author: kakrana@udel.edu
 
@@ -1275,3 +1275,14 @@ if __name__ == '__main__':
 ## Fix: Fixes Bug: 010115 - GFF file lines start with ##
 ## extractFeature bug updated from MPPP - scaffold fix
 ## File check and message display to rename genome file without integers
+
+## v1.07 -> 1.10 [Major update]
+## Two modules updated for improved target prediction and postprocessing to capture more secondary structures
+## Sensitivity improved for both Heuristic and Exhaustive modes [But not implemented in this script - Need to be tested for sconfidence score]
+## Added a filter whch throws our biologically invalid interactions
+
+## v1.10 -> v1.11rc [stable]
+## Fixed a bug introduced in v1.10 - 1) Fixed bugs with args in tarfind4 - Fixed 2) nspread got changed to nthred by mistake - Fixed
+
+## v1.11 -> v1.12
+## Fixed a bug introduced due to regresssin, effected fetching seqeunces for reverse strand
