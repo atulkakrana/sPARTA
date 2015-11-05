@@ -120,12 +120,12 @@ a user provided feature set (FASTA file with sequences of interest) is being ana
 python3 sPARTA.py -featureFile <featureFile.fa> -genomeFeature <0/1> -miRNAFile <miRNAFile.fa> -tarPred -tarScore
 
 ======== Output ==========
-1.  PARE validation results for each library can be found in 'output' folder
+1.  <p>PARE validation results for each library can be found in 'output' folder
     under its corresponding library name. The 'output' folder also contains a combined result file (AllLibValidatedUniq.csv) from all the libraries. 
-    Results from all libs were combined by removing redundant miRNA-target interaction with cleavage at same site.
+    Results from all libs were combined by removing redundant miRNA-target interaction with cleavage at same site.</p>
 
-2.  Target prediction results can be found in 'predicted' folder under the name
-    'All.targs.parsed.csv'
+2.  <p>Target prediction results can be found in 'predicted' folder under the name
+    'All.targs.parsed.csv'</p>
 
 ======= Contact ===========
 
