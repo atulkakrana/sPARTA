@@ -1,5 +1,5 @@
 ## sPARTA: small RNA-PARE Target Analyzer public version 
-## Updated: Updated: version-1.12 30/6/2015
+## Updated: version-1.13 24/11/2015
 ## Property of Meyers Lab at University of Delaware
 ## Author: kakrana@udel.edu
 
@@ -43,9 +43,11 @@ parser.add_argument('-tarScore', nargs='?', const='S', help='Scoring mode '\
 parser.add_argument('-libs', nargs='*', default=[], help='List of PARE '\
     'library files in tag count format. Data can be converted into tag '\
     'count format using')
-parser.add_argument('-tagLen', default=20, help='Minimum length of PARE tag, '\
-    'tags longer than tagLen will be chopped to the specified length. 20 is '\
-    'default')
+parser.add_argument('-minTagLen', default=20, help='Minimum length of PARE '\
+    'tag. Tags shorter than minTagLen will be discarded. 20 is default')
+parser.add_argument('-maxTagLen', default=30, help='Maximum length of PARE '\
+    'tag. Tags longer than maxTagLen will be chopped to the specified length.'\
+    '30 is default')
 parser.add_argument('--tag2FASTA', action='store_true', default=False, help=
     'Convert tag count file for PARE libraries to FASTA files for mapping')
 parser.add_argument('--map2DD', action='store_true', default=False, help=
@@ -1003,8 +1005,8 @@ def tag2FASTA2(lib):
         #print(tag.strip('\n').split('\t'))
         ent = tag.strip('\n').split('\t')
         tag = ent[0]
-        if len(tag) >= args.tagLen: ##
-            fh_out.write('>%s\n%s\n' % (tag_num, tag[:args.tagLen]))
+        if len(tag) >= args.minTagLen: ##
+            fh_out.write('>%s\n%s\n' % (tag_num, tag[:args.maxTagLen]))
             tag_num += 1
         else:
             #print ('Length is not 20nt')
@@ -1412,7 +1414,7 @@ def createPAGeIndex(bowtieFilename):
     #
     for entry in tagCountFile:
         #
-        sequence = entry.split('\t')[0]
+        sequence = entry.split('\t')[0][:args.maxTagLen]
         hits = entry.split('\t')[1]
 
         # 
@@ -1442,18 +1444,18 @@ def createPAGeIndex(bowtieFilename):
 
     return(PAGeDict, allHits)
 
-def unambiguousBaseCounter(transcriptomeFilename, tagLen):
+def unambiguousBaseCounter(transcriptomeFilename, minTagLen):
     """Get the counts of ambiguous bases in the transcriptome file as well
        as counts of ambiguous bases that are within the ends of the
-       transcriptome +/- the tagLen.
+       transcriptome +/- the minTagLen.
 
     Args:
         transcriptomeFilename: Name of the trnascritome fasta file
-        tagLen: Number of bases that an N is allowed to be away from the ends
+        minTagLen: Number of bases that an N is allowed to be away from the ends
             of the gene in order to be counted
 
     Returns:
-        Total number of ambiguous bases and ambiguous bases tagLen-bp away from
+        Total number of ambiguous bases and ambiguous bases minTagLen-bp away from
         the ends of the gene.
 
     """
@@ -1463,8 +1465,8 @@ def unambiguousBaseCounter(transcriptomeFilename, tagLen):
     for i in range(1,len(transcriptomeFile),2):
         currentLine = transcriptomeFile[i]
         baseCounts += len(currentLine) - currentLine.count('N')
-        baseCountsOffTagLen += (len(currentLine) - 2 * tagLen) - currentLine[
-            tagLen:len(currentLine)-tagLen].count('N')
+        baseCountsOffTagLen += (len(currentLine) - 2 * minTagLen) - currentLine[
+            minTagLen:len(currentLine)-minTagLen].count('N')
 
     f_output = open('baseCounts.mem', 'w')
     f_output.write(str(baseCounts) + '\n' + str(baseCountsOffTagLen))
@@ -1480,7 +1482,7 @@ def writePAGeFile(PAGeDict, mode, allHits, baseCounts, baseCountsOffTagLen,
         mode: 0 (genic) or 1 (intergenic)
         allHits: List of all abundance values
         baseCounts: Total number of unambiguous bases
-        baseCountsOffTagLen: Total number of unambiguous bases tagLen-bp away from
+        baseCountsOffTagLen: Total number of unambiguous bases minTagLen-bp away from
             the ends of the gene.
         outputFile: file to output PAGe inforation
         transcriptomeFilename: Name of transcriptome file
@@ -1780,13 +1782,13 @@ def main():
     if args.generateFasta:
         coords = extractFeatures(args.genomeFile,args.gffFile) ## Extracts Coords from GFF3
         fastaOut = getFASTA1(args.genomeFile,coords) ##Creates FASTA file
-        unambiguousBaseCounter(fastaOut, args.tagLen)
+        unambiguousBaseCounter(fastaOut, args.minTagLen)
         print('This is the extracted file: %s' % (fastaOut))
     # 
     elif args.featureFile:
         print("\nThe input FASTA file is considered 'as is' for analysis\n")
         fastaOut = args.featureFile ### Make it better
-        unambiguousBaseCounter(fastaOut, args.tagLen)
+        unambiguousBaseCounter(fastaOut, args.minTagLen)
     
     ### FRAGMENTATION ###################
     ###Script Timer
@@ -2066,3 +2068,7 @@ if __name__ == '__main__':
 
 ## v1.11 -> v1.12
 ## Fixed a bug introduced due to regresssin, effected fetching seqeunces for reverse strand
+
+## v1.12 -> v1.13
+## Fixed a bug where tags weren't being chopped to the specified tag length when creating PAGe index.
+## Replaced tagLen variable with minTagLen and maxTagLen in order to add more flexbility with PARE tag lengths.

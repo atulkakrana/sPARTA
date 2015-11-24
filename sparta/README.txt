@@ -69,8 +69,10 @@ tarScore        Scoring mode for target prediction. S for seedless. N for
 
 libs            List of PARE library files in tag count format. Data can be
 ...             easily converted into tag count format using *********
-tagLen          Minimum length of PARE tag, tags longer than tagLen will be
-...             chopped to the specified length. 20 is default
+minTagLen       Minimum length of PARE tag. Tags shorter than minTagLen will
+...             be discarded. 20 is default
+maxTagLen       Maximum length of PARE tag. Tags longer than maxTagLen will be
+...             chopped to the specified length. 30 is default
 --tag2FASTA     Convert tag count file for PARE libraries to FASTA files for
 ...             mapping
 --map2DD        Map the PARE reads to feature set
