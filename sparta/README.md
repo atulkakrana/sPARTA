@@ -72,9 +72,12 @@ gff file. So either genomefile along with gffFile is used or
 normal. S is default if no mode is specified</td></tr>
 <tr><td>-libs</td><td> List of PARE library files in tag count format. Data can be
  easily converted into tag count format using <a href="http://www.ebi.ac.uk/~stijn/reaper/tally.html" target="_blank">tally</a></td></tr>
-<tr><td>-tagLen</td>       
-<td> Minimum length of PARE tag, tags longer than tagLen will be
-chopped to the specified length. 20 is default</td></tr>
+<tr><td>-minTagLen</td>       
+<td> Minimum length of PARE tag. Tags shorter than minTagLen will be
+discarded. 20 is default</td></tr>
+<tr><td>-maxTagLen</td>
+<td> Maximum length of PARE tag. Tags longer than maxTagLen will be
+chopped to the specified length. 30 is default
 <tr><td>-accel</td> 
 <td>Y to use balanced multiple process scheme or else specify the
              number of processors to be used. Y is default</td></tr>
