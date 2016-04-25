@@ -1954,10 +1954,11 @@ def main():
             PAGeIndexList = []
             global tagCountFile
             tagCountFile = readFile(tagCountFilename)
-            library = tagCountFilename.split('_')[0]
+            library = os.path.splitext(tagCountFilename)[0]
             PAGeOutputFilename = './PAGe/%s_PAGe' % library
             validatedTargetsFilename = './output/%s_validated' % library
     
+
             bowtieFiles = [file for file in os.listdir('dd_map') if file.startswith('%s' % library)]
             print("Creating PAGe Index dictionary for lib %s" % library)
             PAGeStart = time.time()
@@ -2072,3 +2073,8 @@ if __name__ == '__main__':
 ## v1.12 -> v1.13
 ## Fixed a bug where tags weren't being chopped to the specified tag length when creating PAGe index.
 ## Replaced tagLen variable with minTagLen and maxTagLen in order to add more flexbility with PARE tag lengths.
+
+## v1.13 -> v1.14
+## Fixed a bug in which the PARE file name was parsed based on the presence of
+## an underscore. Causes problems when there are more than 1 underscore in the 
+## filename
