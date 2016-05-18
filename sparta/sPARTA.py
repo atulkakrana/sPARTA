@@ -1,7 +1,8 @@
 ## sPARTA: small RNA-PARE Target Analyzer public version 
-## Updated: version-1.14 04/25/2016
+## Updated: version-1.15 05/18/2016
 ## Property of Meyers Lab at University of Delaware
 ## Author: kakrana@udel.edu
+## Author: rkweku@udel.edu
 
 
 #### PYTHON FUNCTIONS ##############################
@@ -43,11 +44,12 @@ parser.add_argument('-tarScore', nargs='?', const='S', help='Scoring mode '\
 parser.add_argument('-libs', nargs='*', default=[], help='List of PARE '\
     'library files in tag count format. Data can be converted into tag '\
     'count format using')
-parser.add_argument('-minTagLen', default=20, help='Minimum length of PARE '\
-    'tag. Tags shorter than minTagLen will be discarded. 20 is default')
-parser.add_argument('-maxTagLen', default=30, help='Maximum length of PARE '\
-    'tag. Tags longer than maxTagLen will be chopped to the specified length.'\
-    '30 is default')
+parser.add_argument('-minTagLen', default=20, type=int, help='Minimum length '\
+    'of PARE tag. Tags shorter than minTagLen will be discarded. 20 is '\
+    'default')
+parser.add_argument('-maxTagLen', default=30, type=int, help='Maximum length '\
+    'of PARE tag. Tags longer than maxTagLen will be chopped to the specified '\
+    'length. 30 is default')
 parser.add_argument('--tag2FASTA', action='store_true', default=False, help=
     'Convert tag count file for PARE libraries to FASTA files for mapping')
 parser.add_argument('--map2DD', action='store_true', default=False, help=
@@ -1447,7 +1449,7 @@ def createPAGeIndex(bowtieFilename):
 def unambiguousBaseCounter(transcriptomeFilename, minTagLen):
     """Get the counts of ambiguous bases in the transcriptome file as well
        as counts of ambiguous bases that are within the ends of the
-       transcriptome +/- the minTagLen.
+       transcriptome - the minTagLen.
 
     Args:
         transcriptomeFilename: Name of the trnascritome fasta file
@@ -2078,3 +2080,7 @@ if __name__ == '__main__':
 ## Fixed a bug in which the PARE file name was parsed based on the presence of
 ## an underscore. Causes problems when there are more than 1 underscore in the 
 ## filename
+
+## v1.14 -> v1.15
+## Fixed a bug causing minTagLen and maxTagLen to be stored as strings rather 
+## than intergers if supplied by the user at the command line.
