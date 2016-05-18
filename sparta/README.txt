@@ -1,5 +1,5 @@
 sPARTA: small RNA-PARE Target Analyzer Version 
-Updated: version-1.14 04/25/2016
+Updated: version-1.15 05/18/2016
 
 ======== Description ========
 small RNA-PARE Target Analyzer (sPARTA) is a tool which utilizes

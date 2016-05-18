@@ -2,7 +2,7 @@
 <body>
 <h2>sPARTA</h2>
 <b>s</b>mall RNA-<b>PA</b>RE <b>T</b>arget <b>A</b>nalyzer<br> 
-Updated: version-1.14 04/25/2016
+Updated: version-1.15 05/18/2016
 <h2><b>Description</b></h2>
 small RNA-PARE Target Analyzer (sPARTA) is a tool which utilizes
 high-throughput sequencing to profile genome-wide cleavage products.
