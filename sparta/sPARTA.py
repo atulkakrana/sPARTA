@@ -2015,8 +2015,8 @@ def main():
                 print("No targets could be validated for the set of miRNAs "\
                       "in lib %s." % library)
 
+        resultUniq()
     
-    resultUniq()
     PredEnd = time.time()
     print ('\n\nIndexing and Prediction run time is %s\n\n' % (round(PredEnd-PredStart,2)))
     fh_run.write('Indexing and Prediction run time is : %s seconds \n' % (round(PredEnd-PredStart,2)))
