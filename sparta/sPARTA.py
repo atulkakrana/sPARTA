@@ -2176,139 +2176,139 @@ def main():
     fh_run.write('Target prediction time is : %s\n' % (round(TFEnd-TFStart,2)))
     #########################################
     
-    # ## PARE PROCESS AND MAP #################
-    # PAREStart = time.time()
+    ## PARE PROCESS AND MAP #################
+    PAREStart = time.time()
     
-    # if args.tag2FASTA:
-    #     shutil.rmtree('./PARE',ignore_errors=True)
-    #     os.mkdir('./PARE')
-    #     PP(tag2FASTA2,args.libs)
+    if args.tag2FASTA:
+        shutil.rmtree('./PARE',ignore_errors=True)
+        os.mkdir('./PARE')
+        PP(tag2FASTA2,args.libs)
     
-    # indexFls = [file for file in os.listdir('./index') if file.endswith ('index.1.bt2')]
-    # print ('These are index files: ',indexFls)
+    indexFls = [file for file in os.listdir('./index') if file.endswith ('index.1.bt2')]
+    print ('These are index files: ',indexFls)
     
-    # if args.map2DD:
-    #     shutil.rmtree('./dd_map',ignore_errors=True)
-    #     os.mkdir('./dd_map')
-    #     global templib
-    #     for templib in args.libs:
-    #         ## Serial -Test
-    #         #for dd in indexFls:
-    #             #print ('Lib:%s mapped to index: %s' % (templib,dd))
-    #             #mapdd2trans(dd)
+    if args.map2DD:
+        shutil.rmtree('./dd_map',ignore_errors=True)
+        os.mkdir('./dd_map')
+        global templib
+        for templib in args.libs:
+            ## Serial -Test
+            #for dd in indexFls:
+                #print ('Lib:%s mapped to index: %s' % (templib,dd))
+                #mapdd2trans(dd)
             
-    #         ###
-    #         PP(mapdd2trans,indexFls)
+            ###
+            PP(mapdd2trans,indexFls)
     
-    # ##Timer
-    # PAREEnd = time.time()
-    # print ('\n\nPARE processing run time is %s\n\n' % (round(PAREEnd-PAREStart,2)))
-    # fh_run.write('PARE processing and mapping time is : %s\n' % (round(PAREEnd-PAREStart,2)))
-    # ## INDEXER ##############################
-    # ###
-    # PredStart = time.time()
+    ##Timer
+    PAREEnd = time.time()
+    print ('\n\nPARE processing run time is %s\n\n' % (round(PAREEnd-PAREStart,2)))
+    fh_run.write('PARE processing and mapping time is : %s\n' % (round(PAREEnd-PAREStart,2)))
+    ## INDEXER ##############################
+    ###
+    PredStart = time.time()
     
-    # if args.validate:
-    #     fastaOut = './genomic_seq.fa'
-    #     predTargets = './predicted/All.targs.parsed.csv'
-    #     shutil.rmtree('./PAGe',ignore_errors=True)
-    #     os.mkdir('./PAGe')
-    #     shutil.rmtree('./output', ignore_errors=True)
-    #     os.mkdir('./output')
-    #     validatedTargetsFilename = './output/MPPPValidated.csv'
+    if args.validate:
+        fastaOut = './genomic_seq.fa'
+        predTargets = './predicted/All.targs.parsed.csv'
+        shutil.rmtree('./PAGe',ignore_errors=True)
+        os.mkdir('./PAGe')
+        shutil.rmtree('./output', ignore_errors=True)
+        os.mkdir('./output')
+        validatedTargetsFilename = './output/MPPPValidated.csv'
     
-    #     # 
-    #     targetFinderFile = readFile(predTargets)
-    #     # 
-    #     header = targetFinderFile[0]
-    #     del(targetFinderFile[0])
+        # 
+        targetFinderFile = readFile(predTargets)
+        # 
+        header = targetFinderFile[0]
+        del(targetFinderFile[0])
     
-    #     # 
-    #     global targetFinderList
-    #     targetFinderList = createTargetFinderDataStructure(
-    #         targetFinderFile)
+        # 
+        global targetFinderList
+        targetFinderList = createTargetFinderDataStructure(
+            targetFinderFile)
     
-    #     # 
-    #     baseCountsFile = readFile('baseCounts.mem')
-    #     baseCounts = int(baseCountsFile[0])
-    #     baseCountsOffTagLen = int(baseCountsFile[1])
+        # 
+        baseCountsFile = readFile('baseCounts.mem')
+        baseCounts = int(baseCountsFile[0])
+        baseCountsOffTagLen = int(baseCountsFile[1])
     
-    #     for tagCountFilename in args.libs:
-    #         PAGeIndexDict = {}
-    #         # Variable holding all hits > 2
-    #         allHits = []
-    #         PAGeIndexList = []
-    #         global tagCountFile
-    #         tagCountFile = readFile(tagCountFilename)
-    #         library = os.path.splitext(tagCountFilename)[0]
-    #         PAGeOutputFilename = './PAGe/%s_PAGe' % library
-    #         validatedTargetsFilename = './output/%s_validated' % library
+        for tagCountFilename in args.libs:
+            PAGeIndexDict = {}
+            # Variable holding all hits > 2
+            allHits = []
+            PAGeIndexList = []
+            global tagCountFile
+            tagCountFile = readFile(tagCountFilename)
+            library = os.path.splitext(tagCountFilename)[0]
+            PAGeOutputFilename = './PAGe/%s_PAGe' % library
+            validatedTargetsFilename = './output/%s_validated' % library
     
 
-    #         bowtieFiles = [file for file in os.listdir('dd_map') if file.startswith('%s' % library)]
-    #         print("Creating PAGe Index dictionary for lib %s" % library)
-    #         PAGeStart = time.time()
+            bowtieFiles = [file for file in os.listdir('dd_map') if file.startswith('%s' % library)]
+            print("Creating PAGe Index dictionary for lib %s" % library)
+            PAGeStart = time.time()
             
-    #         # 
-    #         PAGeIndexAndHits = PPResults(createPAGeIndex, bowtieFiles)
-    #         # 
-    #         for element in PAGeIndexAndHits:
-    #             PAGeIndexDict.update(element[0])
-    #             allHits.extend(element[1])
-    #             PAGeIndexList.append(element[0])
+            # 
+            PAGeIndexAndHits = PPResults(createPAGeIndex, bowtieFiles)
+            # 
+            for element in PAGeIndexAndHits:
+                PAGeIndexDict.update(element[0])
+                allHits.extend(element[1])
+                PAGeIndexList.append(element[0])
 
-    #         PAGeEnd = time.time()
-    #         print("PAGe Indexing took %.2f seconds" % (PAGeEnd - PAGeStart))
-    #         fh_run.write("PAGe Indexing took: %.3f seconds\n" % (PAGeEnd-PAGeStart))
+            PAGeEnd = time.time()
+            print("PAGe Indexing took %.2f seconds" % (PAGeEnd - PAGeStart))
+            fh_run.write("PAGe Indexing took: %.3f seconds\n" % (PAGeEnd-PAGeStart))
     
-    #         # 
-    #         print("Writing PAGeIndex file...")
-    #         PAGeWriteStart = time.time()
-    #         global categoryList
-    #         categoryList = writePAGeFile(PAGeIndexDict, args.genomeFeature,
-    #             allHits, baseCounts, baseCountsOffTagLen, PAGeOutputFilename,
-    #             fastaOut, library)
-    #         PAGeWriteEnd = time.time()
-    #         print("File written. Process took %.2f seconds" % (PAGeWriteEnd - PAGeWriteStart))
-    #         fh_run.write("PAGe index file written. Process took %.2f seconds\n" % (PAGeWriteEnd - PAGeWriteStart))
+            # 
+            print("Writing PAGeIndex file...")
+            PAGeWriteStart = time.time()
+            global categoryList
+            categoryList = writePAGeFile(PAGeIndexDict, args.genomeFeature,
+                allHits, baseCounts, baseCountsOffTagLen, PAGeOutputFilename,
+                fastaOut, library)
+            PAGeWriteEnd = time.time()
+            print("File written. Process took %.2f seconds" % (PAGeWriteEnd - PAGeWriteStart))
+            fh_run.write("PAGe index file written. Process took %.2f seconds\n" % (PAGeWriteEnd - PAGeWriteStart))
     
-    #         # 
-    #         print("Finding the validated targets")
-    #         validatedTargetsStart = time.time()
+            # 
+            print("Finding the validated targets")
+            validatedTargetsStart = time.time()
             
-    #         # 
-    #         # 
-    #         validatedTargetsList = PPResults(validatedTargetsFinder, PAGeIndexList)
-    #         validatedTargets = []
-    #         for validatedTarget in validatedTargetsList:
-    #             validatedTargets.extend(validatedTarget)
+            # 
+            # 
+            validatedTargetsList = PPResults(validatedTargetsFinder, PAGeIndexList)
+            validatedTargets = []
+            for validatedTarget in validatedTargetsList:
+                validatedTargets.extend(validatedTarget)
 
-    #         validatedTargetsEnd = time.time()
-    #         print("All validated targets found in %.2f seconds" % (validatedTargetsEnd - validatedTargetsStart))
-    #         fh_run.write("All validated targets found in %.2f seconds\n" % (validatedTargetsEnd - validatedTargetsStart))
+            validatedTargetsEnd = time.time()
+            print("All validated targets found in %.2f seconds" % (validatedTargetsEnd - validatedTargetsStart))
+            fh_run.write("All validated targets found in %.2f seconds\n" % (validatedTargetsEnd - validatedTargetsStart))
             
-    #         # 
-    #         # 
-    #         if(validatedTargets):
-    #             # print(validatedTargets)
-    #             print("Writing validated targets")
-    #             writeValidatedTargetsFile(header, validatedTargets,
-    #                 validatedTargetsFilename)
+            # 
+            # 
+            if(validatedTargets):
+                # print(validatedTargets)
+                print("Writing validated targets")
+                writeValidatedTargetsFile(header, validatedTargets,
+                    validatedTargetsFilename)
 
-    #         else:
-    #             print("No targets could be validated for the set of miRNAs "\
-    #                   "in lib %s." % library)
+            else:
+                print("No targets could be validated for the set of miRNAs "\
+                      "in lib %s." % library)
 
-    ## Revmap results
-    ReverseMapping()
-    ## Combine results from Multiple libraries
-    uniqRevmapped = resultUniq() # uniqRevmapped='./output/AllLibValidatedUniq.csv'
+        ## Revmap results
+        ReverseMapping()
+        ## Combine results from Multiple libraries
+        uniqRevmapped = resultUniq() # uniqRevmapped='./output/AllLibValidatedUniq.csv'
 
-    # PredEnd = time.time()
-    # print ('\n\nIndexing and Prediction run time is %s\n\n' % (round(PredEnd-PredStart,2)))
-    # fh_run.write('Indexing and Prediction run time is : %s seconds \n' % (round(PredEnd-PredStart,2)))
-    # fh_run.write('Script run time is : %s\n' % (round(PredEnd-FragStart,2)))
-    # fh_run.close()
+    PredEnd = time.time()
+    print ('\n\nIndexing and Prediction run time is %s\n\n' % (round(PredEnd-PredStart,2)))
+    fh_run.write('Indexing and Prediction run time is : %s seconds \n' % (round(PredEnd-PredStart,2)))
+    fh_run.write('Script run time is : %s\n' % (round(PredEnd-FragStart,2)))
+    fh_run.close()
 
 #### RUN ##########################################
 
@@ -2378,7 +2378,7 @@ if __name__ == '__main__':
 ## v1.16 -> v1.17b
 ## Modified extractFeature module for better compatibility wit scaffolded genome -AK
 ## Fixed minor bug where any input fasta file having number in its name would be deleted
-## Fixed target prediction switch so that running w/o pare validation gives no error - RH
+## Fixed target prediction switch so that running w/o pare validation gives no error. I manually made chages to master, same as done by Reza in his branch - RH
 ## 'w' and 'c' set to lower case for all modules
 ## Cleaned/Organized the code and on-screen messages
 ## Added a new function to check for libraries before running sPARTA
