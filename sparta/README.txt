@@ -1,5 +1,5 @@
 sPARTA: small RNA-PARE Target Analyzer Version 
-Updated: version-1.15 05/18/2016
+Updated: version-1.11 4/1/2015
 
 ======== Description ========
 small RNA-PARE Target Analyzer (sPARTA) is a tool which utilizes
@@ -69,10 +69,8 @@ tarScore        Scoring mode for target prediction. S for seedless. N for
 
 libs            List of PARE library files in tag count format. Data can be
 ...             easily converted into tag count format using *********
-minTagLen       Minimum length of PARE tag. Tags shorter than minTagLen will
-...             be discarded. 20 is default
-maxTagLen       Maximum length of PARE tag. Tags longer than maxTagLen will be
-...             chopped to the specified length. 30 is default
+tagLen          Minimum length of PARE tag, tags longer than tagLen will be
+...             chopped to the specified length. 20 is default
 --tag2FASTA     Convert tag count file for PARE libraries to FASTA files for
 ...             mapping
 --map2DD        Map the PARE reads to feature set

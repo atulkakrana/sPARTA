@@ -1,26 +1,16 @@
 ## sPARTA: small RNA-PARE Target Analyzer public version 
-## Updated: version-1.15 05/18/2016
+## Updated: version-1.17b 05/18/2016
 ## Property of Meyers Lab at University of Delaware
 ## Author: kakrana@udel.edu
 ## Author: rkweku@udel.edu
 
 
 #### PYTHON FUNCTIONS ##############################
-import argparse
-import sys,os,re,time,glob
+import sys,os,re,time,glob,shutil,operator,datetime,argparse,importlib
 import subprocess, multiprocessing
-import shutil
-import operator
 from multiprocessing import Process, Queue, Pool
 from operator import itemgetter
-import pyfasta
-import rpy2.robjects as robjects
-from scipy import stats
-import numpy
-import datetime
-from rpy2.robjects.packages import importr
-from rpy2.robjects.vectors import FloatVector
-RStats = importr('stats')
+
 
 #### USER SETTINGS ################################
 parser = argparse.ArgumentParser()
@@ -154,17 +144,102 @@ if(args.validate and not args.libs):
 # genomeFeature must be an integer
 args.genomeFeature = int(args.genomeFeature)
 
-
 ####################################################################
 #### sPARTA FUNCTIONS ##############################################
 
-#### Extract coordinates from GFF file -
-def extractFeatures(genomeFile,gffFile):
+def checkLibs():
+    '''Checks for required components on user system'''
+
+    print("\n++Checking for required libraries and components ######")
+    goSignal    = 1 
+    isRpy2      = importlib.find_loader('rpy2')
+    if isRpy2 is None:
+        print("--rpy2   : missing")
+        goSignal    = 0
+    else:
+        print("--rpy2   : found")
+        pass
+
+    isNumpy     = importlib.find_loader('numpy')
+    if isNumpy is None:
+        print("--numpy  : missing")
+        goSignal    = 0
+    else:
+        print("--numpy  : found")
+        pass
+
+    isScipy     = importlib.find_loader('scipy')
+    if isScipy is None:
+        print("--scipy  : missing")
+        goSignal    = 0
+    else:
+        print("--scipy  : found")
+        pass
+
+    isPyfasta   = importlib.find_loader('pyfasta')
+    if isPyfasta is None:
+        print("--pyfasta: missing")
+        goSignal    = 0
+    else:
+        print("--pyfasta: found")
+        pass
+
+    if goSignal == 0:
+        print("\nPlease install missing libraries before running the analyses")
+        print("See README for how to install these")
+        print("sPARTA has unmet dependendies and will exit for now\n")
+        sys.exit()
+
+    # isTally = shutil.which("tally")
+    # if isTally:
+    #     print("Found:Tally")
+    #     pass
+    # else:
+    #     print("Please install 'Tally' before using the tool")
+    #     print("See README for how to INSTALL")
+    #     sys.exit()
+
+    return None
+
+def genomeReader(genomeFile):
+    '''
+    Reads Genome FASTA file
+    '''
+
+    print("Fn: genomeReader\n")
+    if os.path.exists("./%s" % genomeFile):
+        fh_in = open(genomeFile, 'r')
+    else:
+        print("\nPlease check the genomeFile - Is it in sPARTA directory? Did you input wrong name?")
+        print("If it exists and you input correct name then it could have been deleted while last cleanup operation - Sorry!!")
+        print("If deleted then please rename genomeFile (without any integers in name) and re-copy in sPARTA folder\n")
+        print("Script will exit for now\n")
+        sys.exit()
+    print("Caching genome fasta")
+    genomeFile = fh_in.read()
+    genomeList = genomeFile.split('>')[1:] 
+    chromoDict = {} 
+    for i in genomeList:
+        chromoInfo  = i.partition('\n') 
+        chrid       = chromoInfo[0].split()[0] 
+        chrSeq      = chromoInfo[2].replace("\n", "")
+        chromoDict[chrid] = [chrSeq]
+
+    print("Genome dict prepared for %s chromosome/scaffolds" % (len(chromoDict)))
+    return chromoDict
+
+def extractFeatures(genomeFile,gffFile,chromoDict):
+
+    '''
+    Extract coordinates from GFF file - New proposed name annoReader
+    '''
+    print("Fn: extractFeatures\n\n")
+    fh_in       = open(gffFile,'r')
+    fh_in.readline() ## GFF version 
+    gffRead     = fh_in.readlines()
+    genome_info = []
+    chromo_dict = {}
     
-    fh_in = open(gffFile,'r')
-    fh_in.readline() ## GFF version
-    gffRead = fh_in.readlines()
-    genome_info = [] #
     for i in gffRead:
         ent = i.strip('\n').split('\t')
         #print (ent)
@@ -172,10 +247,10 @@ def extractFeatures(genomeFile,gffFile):
             pass
         else:
             if ent[2] == 'gene':
-                chrID = ent[0]
-                strand = ent[6].translate(str.maketrans("+-","WC"))
-                geneName = ent[8].split(';')[0].split('=')[1]
-                geneType = 'gene'
+                chrID       = ent[0]
+                strand      = ent[6].translate(str.maketrans("+-","wc"))
+                geneName    = ent[8].split(';')[0].split('=')[1]
+                geneType    = 'gene'
                 #print(chrID,strand,geneName,ent[3],ent[4],geneType)
                 genome_info.append((chrID,strand,geneName,int(ent[3]),int(ent[4]),geneType))
         
@@ -186,27 +261,27 @@ def extractFeatures(genomeFile,gffFile):
     alist = []##
     for i in range(0, int(len(genome_info))+1): #
         #print (i)
-        gene1 = (genome_info[i])
-        gene2 = (genome_info[i+1])
-        gene_type = 'inter' #
-        #print(gene1,gene2)
+        gene1       = (genome_info[i])
+        gene2       = (genome_info[i+1])
+        gene_type   = 'inter' #
+        # print(gene1,gene2)
         
         if gene1[3] == gene2[3] and gene1[4] == gene2[4]:
-            ##gene is same/overlapping consider next gene
+            ## Gene is same/overlapping consider next gene
             pass
         else:
             if tuple(gene1[0:2]) not in alist:#
-                print ('Caching gene coords for chromosome: %s and strand: %s\n' % (gene1[0], gene1[1]))
+                print ('-Caching gene coords for chromosome: %s and strand: %s' % (gene1[0], gene1[1]))
                 alist.append((gene1[0:2]))
-                inter_start1 = 1
-                inter_end1 = int(gene1[3])-1#
+                inter_start1    = 1
+                inter_end1      = int(gene1[3])-1#
                 
                 ## If both the genes belong to same chr and strand i.e. chromosome has atleast two genes
-                if gene1[0] == gene2[0] and gene1[1] == gene2[1]: 
-                    inter_start2 = int(gene1[4])+1##From end of first gene of chromosome
-                    inter_end2 = int(gene2[3])-1###Till start of second gene
+                if gene1[0]         == gene2[0] and gene1[1] == gene2[1]: 
+                    inter_start2    = int(gene1[4])+1 ## From end of first gene of chromosome
+                    inter_end2      = int(gene2[3])-1 ## Till start of second gene
                     
-                    if gene1[1] == 'w': ##The gene is on positive strand so upstream
+                    if gene1[1]     == 'w': ##The gene is on positive strand so upstream
                         inter_name1 = ('%s_up' % (gene1[2]))
                         inter_name2 = ('%s_up' % gene2[2])
                     else: ##Its on negative strand
@@ -256,6 +331,32 @@ def extractFeatures(genomeFile,gffFile):
                         inter_name = ('%s_up' % (gene1[2]))                    
                     genome_info_inter.append((gene1[0],gene1[1],inter_name,inter_start,inter_end,gene_type)) ##Chr_id, strand
     
+
+    ## Additional check for scaffolded genomes, if there are no genes in a scffold it's whole seqeunce will be fetched as intergenic
+    if args.genomeFeature == 1:
+        for i in chromoDict.keys():
+            alen = len(chromoDict[i])
+            # print("Chr:%s | Length:%s" % (i,alen))
+            if tuple((i,'c')) in alist:
+                # print("Found")
+                # sys.exit()
+                pass
+            else:
+                # print("Get the tuple")
+                inter_name = ('chr%s_c_all' % (i))
+                genome_info_inter.append((i,'c',inter_name,1,alen,'inter')) ## Chr_id, strand, name, start, stop, length
+
+            if tuple((i,'w')) in alist:
+                # print("Found")
+                # sys.exit()
+                pass
+            else:
+                # print("Get the tuple")
+                inter_name = ('chr%s_w_all' % (i))
+                genome_info_inter.append((i,'w',inter_name,1,alen,'inter')) ## Chr_id, strand, name, start, stop, length
+
+    
+    ## Sort the list after adding intergenic regions on on basis of chr_id and strand that is essential while caching chromosme during slicing sequences
     genome_info_inter_sort = sorted(genome_info_inter, key=operator.itemgetter(0,1))
         
     gene_coords_file = './coords'
@@ -295,58 +396,52 @@ def extractFeatures(genomeFile,gffFile):
     
     return coords
 
-def getFASTA1(genomeFile,coords):
+def getFASTA1(genomeFile,coords,chromoDict):
+
+    '''
+    Extracts Genes or intergenic regions based on coords list from genome seqeunce - New proposed name get features
+    '''
+    print("Fn: getFASTA1\n\n")
     fastaOut = './genomic_seq.fa'
     fh_out = open(fastaOut, 'w')
-
-    if os.path.exists("./%s" % genomeFile):
-        fh_in = open(genomeFile, 'r')
-    else:
-        print("\nPlease check the genomeFile - Is it in sPARTA directory? Did you input wrong name?")
-        print("If it exists and you input correct name then it could have been deleted while last cleanup operation - Sorry!!")
-        print("If deleted then please rename genomeFile (without any integers in name) and re-copy in sPARTA folder\n")
-        print("Script will exit for now\n")
-        sys.exit()
-
-    genomeFile = fh_in.read()
-    genomeList = genomeFile.split('>')[1:] 
-    chromoDict = {} 
-    for i in genomeList:
-        chromoInfo = i.partition('\n') 
-        chrid = chromoInfo[0].split()[0] 
-        chrSeq = chromoInfo[2].replace("\n", "")
-        chromoDict[chrid] = [chrSeq]
 
     chromo_mem = []
     for i in coords: ## Coords is list from gff parser
         #print (i)
-        gene = i[2]
-        chr_id = i[0]
-        strand = i[1]
-        start = i[3]-1#
-        end = i[4]
-        #print('start:%s End:%s Chr:%s Strand:%s' % (start,end,chr_id,strand))
+        chr_id  = i[0]
+        strand  = i[1]
+        gene    = i[2]
+        start   = i[3]-1
+        end     = i[4]
+        # print('\nGene:%s | Start:%s End:%s Chr:%s Strand:%s' % (gene,start,end,chr_id,strand))
         
         if tuple(i[0:2]) not in chromo_mem: 
             chromo_mem.append(tuple(i[0:2]))   ##
-            print ("Reading chromosome:%s and strand: '%s' into memory to splice genes" % (i[0],i[1]) )
+            print("\n++Reading chromosome:%s and strand:'%s' ################" % (i[0],i[1]) )
+            print('--Gene:%s | Start:%s End:%s Chr:%s Strand:%s' % (gene,start,end,chr_id,strand))
+            print("--Fetching gene:%s" % (gene))
             chrKey = i[0]
             chromo = str(chromoDict[chrKey])
             #print('Chromosome:',chromo)
             
-            gene_seq = chromo[start:end]  #
+            if end == '-':
+                gene_seq = chromo[start:] ## Usually first entry (recorded in this loop) will be from chr-start to gene-start, but if this coord/region is few nts (<20nt) 
+                                          ## it is skipped, and you will encouter directly the gene-end to chr-end region, and you need this loop - Very rare case
+            else:
+                gene_seq = chromo[start:end]
             #print(gene_seq)
-            if strand == 'C':
+            if strand == 'c':
                 gene_seq_rev = gene_seq[::-1].translate(str.maketrans("TAGC","ATCG"))
                 fh_out.write('>%s\n%s\n' % (gene,gene_seq_rev))
             else:
                 fh_out.write('>%s\n%s\n' % (gene,gene_seq))
     
         elif end == '-': ##
-            print('Fetching gene %s to prepare FASTA file' % (gene))
+            print('--Gene:%s | Start:%s End:%s Chr:%s Strand:%s' % (gene,start,end,chr_id,strand))
+            print("--Fetching gene:%s" % (gene))
             gene_seq = chromo[start:]##
             #print(gene_seq)
-            if strand == 'C':
+            if strand == 'c':
                 gene_seq_rev = gene_seq[::-1].translate(str.maketrans("TAGC","ATCG"))
                 fh_out.write('>%s\n%s\n' % (gene,gene_seq_rev))
                 
@@ -354,10 +449,11 @@ def getFASTA1(genomeFile,coords):
                 fh_out.write('>%s\n%s\n' % (gene,gene_seq))
             
         else:
-            print('Fetching gene %s to prepare FASTA file' % (gene))
+            print('--Gene:%s | Start:%s End:%s Chr:%s Strand:%s' % (gene,start,end,chr_id,strand))
+            print("--Fetching gene:%s" % (gene))
             gene_seq = chromo[start:end]##
             #print(gene_seq)
-            if strand == 'C':
+            if strand == 'c':
                 gene_seq_rev = gene_seq[::-1].translate(str.maketrans("TAGC","ATCG"))
                 fh_out.write('>%s\n%s\n' % (gene,gene_seq_rev))
                 
@@ -371,19 +467,20 @@ def getFASTA1(genomeFile,coords):
 
 def fragFASTA(FASTA):
     
-    ##
+    ## Purge fragmented files from earlier run
     shutil.rmtree('./genome', ignore_errors=True)
     os.mkdir('./genome')
     
-    pattern = ".*\.[0-9].*\.fa" #
+    pattern = ".*_seq\.[0-9].*\.fa" #
     print ("\n***Purging older files***")
     for file in os.listdir():
         if re.search(pattern,file):
             print (file,'is being deleted')
             os.remove(file)
     
+    ## Frag User FASTA file
     statInfo = os.stat(FASTA)
-    filesize =round(statInfo.st_size/1048576,2)
+    filesize = round(statInfo.st_size/1048576,2)
     print('\n**Size of FASTA file: %sMB**' % (filesize))##
     
     if filesize <= args.splitCutoff: ## 
@@ -392,8 +489,8 @@ def fragFASTA(FASTA):
         print ('No fragmentation performed for file %s' % (fls))
         
     else:
-        fh_in = open(FASTA, 'r')
-        seq_count = fh_in.read().count('>')
+        fh_in       = open(FASTA, 'r')
+        seq_count   = fh_in.read().count('>')
         print('**Number of headers in file: %s**\n'% (seq_count))
         #if genome == 'N':
         if seq_count >= 30: #
@@ -407,7 +504,7 @@ def fragFASTA(FASTA):
             
             print ("Size based fragmentation in process for '%s' file" % (FASTA))
             retcode = subprocess.call(["pyfasta","split", "-n", splitnum, FASTA])
-            fls = [file for file in os.listdir() if re.search(r'.*\.[0-9].*\.fa', file)] ## file list using regex
+            fls = [file for file in os.listdir() if re.search(r'.*_seq\.[0-9].*\.fa', file)] ## file list using regex
             #fls = glob.glob(r'%s.[0-9]{1-3}.fa' % (FASTA.split('.')[0])) ## fragmented file list ##
             #print ('The fragments: %s' % (fls))
                
@@ -417,7 +514,7 @@ def fragFASTA(FASTA):
             if fragFasta == 'Y':
                 print ("Header based fragmentation in process for '%s' file" % (FASTA))
                 retcode = subprocess.call(["pyfasta","split", "-n", splitnum, FASTA])
-            fls = [file for file in os.listdir() if re.search(r'.*\.[0-9].*\.fa', file)]
+            fls = [file for file in os.listdir() if re.search(r'.*_seq\.[0-9].*\.fa', file)]
 
             
             #print ('The fragments: %s' % (fls))
@@ -432,30 +529,33 @@ def fragFASTA(FASTA):
     return fls
 
 def miRinput():
-    miRs = [] #
-    miRNA_file_clean = CleanHeader(args.miRNAFile)#
-    fh_miRNA = open(miRNA_file_clean, 'r')
-    fh_out2 = open('miRinput_RevComp.fa', 'w')
-    mir_base = fh_miRNA.read()
-    mir_blocks= mir_base.split('>')
+    mirL                = [] ## List to store miRNAs
+    outfile             = ('%s_clean_revcomp.fa' % (args.miRNAFile))
+    miRNA_file_clean    = cleanHeader(args.miRNAFile,outfile)#
+    fh_miRNA            = open(miRNA_file_clean, 'r')
+    fh_out2             = open('miRinput_RevComp.fa', 'w')
+    mir_base            = fh_miRNA.read()
+    mir_blocks          = mir_base.split('>')
     for i in mir_blocks[1:]:
         #print (i)
-        block = i.strip('\n')#
-        ent = block.split('\n')#
-        #print (ent)
-        #print ('%s,%s,%s,%s' % (ent[0],'None','None',ent[1]))
-        miRs.append((ent[0],'None','None',ent[1]))## 
-        fh_out2.write('>%s\n%s\n' % (ent[0],ent[1].translate(str.maketrans("AUTGC","TAACG"))[::-1]))## 
-    fh_miRNA.close()
-    mirTable = 'None'#
-    print ('Total number of miRNAs in given file: %s\n' % (len(miRs)))
+        block       = i.strip('\n')
+        ent         = block.split('\n')
+        miRname     = ent[0]
+        miRseq_rc   = ent[1].translate(str.maketrans("AUTGC","TAACG"))[::-1]
+
+        mirL.append((miRname,'None','None',miRseq_rc))## 
+        fh_out2.write('>%s\n%s\n' % (miRname,miRseq_rc))
     
+    mirTable = 'None'#
+    print('Total number of miRNAs in given file: %s\n' % (len(mirL)))
+    
+    fh_miRNA.close()
     fh_out2.close()
         
     #for i in miRs:
     #    print (i)
         
-    return miRs ##miRs holds the list of miRNA name and query where as miRtable holds flag -table name or local
+    return mirL ## miRs holds the list of miRNA name and query where as miRtable holds flag -table name or local
 
 ## Deprecated - Apr-1 [Retained for backward compatibility]
 def tarFind3(frag):
@@ -535,23 +635,23 @@ def tarFind4(frag):
         nspread2 = str(nspread)
         if args.tarPred == 'H': ## Heurustic
             print ("You chose 'Heuristic mode' for target identification")
-            intervalFunc = str("L,4,0.1")
-            minScoreFunc = str("L,-24,-0.5") ###~34.5 - 35 i.e 34 - Stable v1.08 
-            refGap= str("10,8") ## Bulge in miR  + 3MM, 2 seprate or consequite bulges filtered out later - - updated-Mar-23-15 - Can be (10,12) to gain speed - it will effect 1 gap and MM but make 2 gaps impossible
-            readGap = str("10,6") ## Bulge in tar + 3MM, 2bulge in tar + 2MM and no bulge 6MM updated-Mar-23-15,
-            misPen = str("6,2") ## Mismatch penalty, w/o phred score mx is used i.e. first one - can be changed to (5,2) to improve sensistivity - It will only effect 1 gap scenario and 2 gaps cases will be as is
-            matScore = str("0") ## Match score
-            retcode2 = subprocess.call(["bowtie2","-a","--end-to-end","-D 3","-R 2","-N 1","-L 8","-i",intervalFunc,"--rdg",readGap,"--rfg",refGap,"--mp",misPen,"--ma",matScore,"--min-score",minScoreFunc,"--norc","--no-hd","--no-unal","-p",nspread2, "-x", index, "-f" ,"miRinput_RevComp.fa","-S", file_out])
+            intervalFunc    = str("L,4,0.1")
+            minScoreFunc    = str("L,-24,-0.5") ###~34.5 - 35 i.e 34 - Stable v1.08 
+            refGap          = str("10,8") ## Bulge in miR  + 3MM, 2 seprate or consequite bulges filtered out later - - updated-Mar-23-15 - Can be (10,12) to gain speed - it will effect 1 gap and MM but make 2 gaps impossible
+            readGap         = str("10,6") ## Bulge in tar + 3MM, 2bulge in tar + 2MM and no bulge 6MM updated-Mar-23-15,
+            misPen          = str("6,2") ## Mismatch penalty, w/o phred score mx is used i.e. first one - can be changed to (5,2) to improve sensistivity - It will only effect 1 gap scenario and 2 gaps cases will be as is
+            matScore        = str("0") ## Match score
+            retcode2        = subprocess.call(["bowtie2","-a","--end-to-end","-D 3","-R 2","-N 1","-L 8","-i",intervalFunc,"--rdg",readGap,"--rfg",refGap,"--mp",misPen,"--ma",matScore,"--min-score",minScoreFunc,"--norc","--no-hd","--no-unal","-p",nspread2, "-x", index, "-f" ,"miRinput_RevComp.fa","-S", file_out])
         
         elif args.tarPred == 'E': ##Exhaustive
             print ("You chose 'Exhaustive mode' for target identification - Please be patient")
-            intervalFunc = str("L,2,0.1")
-            minScoreFunc = str("L,-24,-0.5") ### ~34.5 - 35 i.e 34 - Stable v1.08                      
-            refGap= str("10,8") ## Bulge in miR  + 3MM, 2 seprate or consequite bulges filtered out later - updated-Mar-23-15
-            readGap = str("10,4") ## Bulge in tar + 4MM, 2bulge in tar + 3MM and no bulge 6MM - updated-Mar-23-15,
-            misPen = str("5,2") ## Mismatch penalty, w/o phred score mx is used i.e. first one
-            matScore = str("0") ## Match score
-            retcode2 = subprocess.call(["bowtie2","-a","--end-to-end","-D 4","-R 2","-N 1","-L 6","-i",intervalFunc,"--rdg",readGap,"--rfg",refGap,"--mp",misPen,"--ma",matScore,"--min-score",minScoreFunc,"--norc","--no-hd","--no-unal","-p",nspread2, "-x", index,"-f", "miRinput_RevComp.fa","-S", file_out])
+            intervalFunc    = str("L,2,0.1")
+            minScoreFunc    = str("L,-24,-0.5") ### ~34.5 - 35 i.e 34 - Stable v1.08                      
+            refGap          = str("10,8") ## Bulge in miR  + 3MM, 2 seprate or consequite bulges filtered out later - updated-Mar-23-15
+            readGap         = str("10,4") ## Bulge in tar + 4MM, 2bulge in tar + 3MM and no bulge 6MM - updated-Mar-23-15,
+            misPen          = str("5,2") ## Mismatch penalty, w/o phred score mx is used i.e. first one
+            matScore        = str("0") ## Match score
+            retcode2        = subprocess.call(["bowtie2","-a","--end-to-end","-D 4","-R 2","-N 1","-L 6","-i",intervalFunc,"--rdg",readGap,"--rfg",refGap,"--mp",misPen,"--ma",matScore,"--min-score",minScoreFunc,"--norc","--no-hd","--no-unal","-p",nspread2, "-x", index,"-f", "miRinput_RevComp.fa","-S", file_out])
         
         else:
             print ('''\nPlease choose correct target prediction mode - Heuristic (H) or Exhaustive (E)\n
@@ -718,9 +818,9 @@ def tarParse4(targComb):
     print ('\n**Target prediction results are being generated**')
     ## Input / Output file ######
     print ("File for parsing: '%s' in predicted folder\n" % (targComb))
-    fh_in = open(targComb,'r')
+    fh_in   = open(targComb,'r')
     TarPred =  './predicted/%s.parsed.csv' % (targComb.rpartition('/')[-1]) ### Similar to parsed target finder format
-    fh_out = open(TarPred,'w')
+    fh_out  = open(TarPred,'w')
     fh_out.write('miRname,Target,BindSite,miRseq,tarSeq,Score,Mismatch,CIGAR\n')
     
     #acount = 0
@@ -731,27 +831,27 @@ def tarParse4(targComb):
     #sys.exit()
     
     #### Regenerate Target sequence with all features #####
-    acount = 0 ##Total number of interactions from predictions
-    parseCount = 0 ## Total number of interactions scores and written to result file
+    acount      = 0 ##Total number of interactions from predictions
+    parseCount  = 0 ## Total number of interactions scores and written to result file
     for i in fh_in:
         # print("\nEntry:",i.strip("\n"))
-        acount += 1
-        ent = i.strip('\n').split('\t')
+        acount      += 1
+        ent         = i.strip('\n').split('\t')
         #print('\n%s\n' % ent)
-        miRrevcomp = ent[9]                 ## miRNA complemented and reversed to map genome using bowtie. That is target sequence if mismatches and gaps are added
-        tarHash = list(miRrevcomp)          ## Strings are immutable convert to list - To rebuilt a traget seq
+        miRrevcomp  = ent[9]                 ## miRNA complemented and reversed to map genome using bowtie. That is target sequence if mismatches and gaps are added
+        tarHash     = list(miRrevcomp)          ## Strings are immutable convert to list - To rebuilt a traget seq
         # print("\nTarHash",tarHash)
         
-        miRrev = miRrevcomp.translate(str.maketrans("TACG","AUGC")) ## Re-translated to get miR but still in reverse orientation - OK
-        mirHash = list(miRrev)
+        miRrev      = miRrevcomp.translate(str.maketrans("TACG","AUGC")) ## Re-translated to get miR but still in reverse orientation - OK
+        mirHash     = list(miRrev)
         
         #print('Original read mapped i.e miRNA revcomp',miRrevcomp)
         
         ## Gap and Bulges (with reference to miRNA) - Identify gaps and bulges and modify miRNA read used for mapping to regenerate target as well as miRNA
         ## Add gap to target sequence  first to make miR length comparable to target
-        gapinfo = ent[5]
-        gappos = re.split("[A-Z]",gapinfo)   ## In python format - gap in target seq and bulge in miRNAseq
-        gapNuc = re.findall("[A-Z]",gapinfo)
+        gapinfo     = ent[5]
+        gappos      = re.split("[A-Z]",gapinfo)   ## In python format - gap in target seq and bulge in miRNAseq
+        gapNuc      = re.findall("[A-Z]",gapinfo)
         # print("gappos:",gappos,"| gapNuc:",gapNuc)
         
         ###########################################################################################
@@ -988,7 +1088,7 @@ def tarParse4(targComb):
             mismatches = 0
 
         #print(ent[0],ent[2],bindsite,miRrev,tar,score,misinfo,gapinfo)## MiRname, Tarname, mirSeq,Taerseq,binding site
-        fh_out.write('>%s,%s,%s,%s,%s,%s,%s,%s\n' % (ent[0],ent[2],bindsite,mir.replace("U","T"),tar.replace("U","T"),score,mismatches,gapinfo))
+        fh_out.write('%s,%s,%s,%s,%s,%s,%s,%s\n' % (ent[0],ent[2],bindsite,mir.replace("U","T"),tar.replace("U","T"),score,mismatches,gapinfo))
         parseCount  += 1
     
     
@@ -1057,12 +1157,10 @@ def FileCombine():
         
     return targComb
 
-def CleanHeader(filename):
+def cleanHeader(filename,outfile):
 
-    fh_in=open(filename, 'r')
-
-    out_file = ('%s_new_head.fa' % (filename))
-    fh_out =open(out_file, 'w')
+    fh_in   = open(filename, 'r')
+    fh_out  = open(outfile, 'w')
     
     print ('\nProcessing "%s" file to clean FASTA headers\n' % (filename))
     
@@ -1079,7 +1177,7 @@ def CleanHeader(filename):
         
     fh_in.close()
     fh_out.close()
-    return out_file
+    return outfile
 
     print('The fasta file with reduced header: "%s" with total entries %s has been prepared\n' % (out_file, acount))
 
@@ -1188,7 +1286,7 @@ def pValueCalculator(target, targetFinderList, proportion):
 
     """
 
-    r = robjects.r
+    r = robjects.r ## Use scipy/numpy for this http://docs.scipy.org/doc/numpy/reference/generated/numpy.random.binomial.html
     miRNAName = target[0]
     score = target[5]
 
@@ -1684,8 +1782,8 @@ def writeValidatedTargetsFile(header, validatedTargets, outputFile):
 
     f = open(outputFile,'w')
 
-    f.write(header + ',cleavage position,PARE reads,10 nt window abundance,'\
-        'PARE reads/window abundance,category,p-value,noise corrected p '\
+    f.write(header + ',cleavagePosition,PAREAbundance,10-nt window abundance,'\
+        'PARE reads/window abundance,category,p-value,corrected p-'\
         'value\n')
 
     # noiseFilter requires that p value be <= .25 and window ratio be
@@ -1729,34 +1827,34 @@ def resultUniq():
     """Read validated files for each library 
     and generate a single file with unique results"""
 
-    validated_fls = [file for file in os.listdir('./output') if re.search(r'_validated', file)]
+    revmapped_fls = [file for file in os.listdir('./output') if re.search(r'revmapped.csv', file)]
     #validated_fls = [file for file in os.listdir('./output') if file.endswith ('revmapped.csv')]
     
-    print ('Files with lib-wise results:',validated_fls)
+    print ('Files with lib-wise results:',revmapped_fls)
     print ('\nCombining results from all the files to generate a single report\n')
     
-    validatedComb = './output/ALLLibCombinedRedundant.csv'
-    fh_out = open(validatedComb ,'w')
+    validatedComb   = './output/ALLLibCombinedRedundant.csv'
+    fh_out          = open(validatedComb ,'w')
     
     ## Combine files
     header = "" 
-    for x in validated_fls: 
+    for x in revmapped_fls: 
         print (x)
-        revamppedfile = open('./output/%s' % (x), 'r')
-        header = revamppedfile.readline().strip('\n') ## Use later
-        data = revamppedfile.read()
+        revamppedfile   = open('./output/%s' % (x), 'r')
+        header          = revamppedfile.readline().strip('\n') ## Use later
+        data            = revamppedfile.read()
         revamppedfile.close()
         fh_out.write(data)
     fh_out.close()
     
     ## Sort combined result file:
-    fh_in=open(validatedComb, 'r') 
-    parsed_in = [line.strip('\n').split(',') for line in fh_in]
+    fh_in       =open(validatedComb, 'r') 
+    parsed_in   = [line.strip('\n').split(',') for line in fh_in]
     parsed_in.sort(key=lambda k: (-int(k[9]) )) ## PARE and corrected p-value
     parsed_in.sort(key=lambda k: (float(k[14]) ))
 
-    uniqRevmapped = './output/AllLibValidatedUniq.csv'
-    fh_output2=open(uniqRevmapped, 'w')
+    uniqRevmapped   = './output/All.Libs.Validated.Uniq.csv'
+    fh_output2      =open(uniqRevmapped, 'w')
     fh_output2.write("%s\n" % header)
 
     ## Uniq
@@ -1774,16 +1872,203 @@ def resultUniq():
             pass
     
     fh_output2.close()
-    os.remove(validatedComb)
+    if os.path.isfile(validatedComb):
+        os.remove(validatedComb)
     
     return uniqRevmapped
+
+def genomicCoord(ent): ####
+
+    '''
+    Reverse maps entry
+    '''
+    
+    ## Create a dictionary from list of coords to be searched later
+    ## Gene_coords structure: 1, 'c','AT1G01020', 5928, 8737, protein_coding
+    ## ent structure: >ath-miR401,AT2G06095,971-991,ACAGCCAGCTGTGGTCAAAGC,TGTCGATCGACACCAGTTTCG,1,5A15,21M,981,13,13,1,2,0.000217,0.000217
+   
+    
+    # print (ent)
+    # gene_name   = ent[1].split('_')[0] # for exmaple, AT2G06095_up - Changed to nect line in sPARTA1.17
+    gene_name   = ent[1] # for exmaple, AT2G06095_up
+    bind_site   = ent[2].split('-')
+    cleave_site = int(ent[8])
+    
+    ## Reverse map co-ordinates ##########################################################
+    print ('**Reverse mapping of Co-ordinates will be performed**')
+    if gene_name in coord_dict_wat:
+        print ('Entry: %s in positive strand: %s' % (ent[0:4],coord_dict_wat[gene_name]))
+        geno_start = coord_dict_wat[gene_name][1]###Use for reverse mapping of postive genes
+
+        #print('Looking for chr_id')
+        chr_id  = coord_dict_wat[gene_name][0]
+        #print('chr_id found')
+        strand  = 'w' ## AVlilable in dictionary also coord_dict_crick[gene_name][1]
+        gtype   =  coord_dict_wat[gene_name][2] ## Gene type
+        new_cleave_site     = (int(geno_start)-1)+int(cleave_site)###1 is reduced to give correct positions
+        new_bind_site_start = (int(geno_start)-1)+int(bind_site[0])
+        new_bind_site_end   = (int(geno_start)-1)+int(bind_site[1])
+        new_bind_site       = '%s-%s' % (new_bind_site_start,new_bind_site_end)
+    else:
+        print ('Entry: %s in reverse strand: %s' % (ent[0:4],coord_dict_crick[gene_name]))
+        geno_end    = coord_dict_crick[gene_name][1] ### Use for reverse mapping of negative genes
+        #print('Looking for chr_id')
+        chr_id      = coord_dict_crick[gene_name][0]
+        #print('chr_id found')
+        strand      = 'c' ## Available in dictionary also coord_dict_crick[gene_name][1]
+        gtype       =  coord_dict_crick[gene_name][2] ##Gene type
+        new_cleave_site     = (int(geno_end)+1)-int(cleave_site)###1 is added to give correct positions
+        new_bind_site_end   = (int(geno_end)+1)-int(bind_site[0])###As the sequence was reversed before TF and CL, their binding start and end direction has also changed - Verified-OK
+        new_bind_site_start = (int(geno_end)+1)-int(bind_site[1])
+        new_bind_site       = '%s-%s' % (new_bind_site_start,new_bind_site_end)
+
+    print("Rev Mapped: %s,%s,%s,%s,%s" % (str(chr_id),strand,new_cleave_site,new_bind_site_start,new_bind_site_end))
+    rev_mapped_entry = ("%s,%s,%s,%s,%s,%s" % (','.join(ent),str(chr_id),strand,new_cleave_site,new_bind_site_start,new_bind_site_end))
+    
+    return rev_mapped_entry
+
+def ReverseMapping():
+    '''
+    Creates Coords dictionary, Reversemap coordinates, and output results in file
+    '''
+
+    print("#### Reverse Mapping Initiated ###########################################")
+    
+    ## Read strand from gene coords file becuase uniqRevmapped file doesn't have this info.
+    print("Step 1/4: Reading coords file")
+    fh_in       = open("coords","r")
+    fileRead    = fh_in.readlines()
+    coords      = [] ## List to store strand
+
+    for i in fileRead:
+        ent     = i.strip("\n").split(",")
+        # print("This is read entry",ent)
+        coords.append((ent))
+    print("Coords read from file:%s entries" % (len(coords)))
+    print('snippet of coords:',coords[1:10])
+    print("Step 1/4: DONE!!\n\n")
+    time.sleep(1)
+
+    #### 2. PREPARE DICTIONARY OF COORDS ########################################
+    print("Step 2/4: Preparing dictionary of coordinates")
+    global coord_dict_wat, coord_dict_crick
+    coord_dict_wat      = {} ## Dictionary of genes at watson strand
+    coord_dict_crick    = {} ## Dictionary of genes at crick strand
+
+    global nproc
+    nproc ='1' ## Need better handling
+       
+    for i in coords:### gene_coords is a list in script, also written out as file of same name
+        # print ("This is a coord:",i)
+        strand      = i[1]
+        # GeneName    = i[2].split('_')[0] # for exmaple, AT2G06095_up
+        GeneName    = i[2] # for exmaple, AT2G06095_up
+        # print('chr:%s | gene:%s | strand:%s' % (i[0],i[2],i[1]))
+        if strand == 'c':### if entry in reverse strand
+            atuple = (i[0],i[3],i[4],i[5])
+            coord_dict_crick[GeneName] = atuple ## Gene name as key and chr_id,start, end and gene type as value
+        elif strand == 'w':
+            atuple = (i[0],i[3],i[4],i[5])
+            coord_dict_wat[GeneName] = atuple   ## Gene name as key and chr_id,start, end and gene 
+        else:
+            print("Something went wrong with reverse mapping")
+            print("Encountered unexpected charater for chromosome strand:%s" % (strand))
+            print("Please check your GFF file, it seems to have unexpected characters for strand")
+            sys.exit()
+    
+    print("Entries in watson dict:%s | crick dict:%s" % (len(coord_dict_wat),len(coord_dict_crick)))
+    print("Strand dictionary made")
+    print("Step 2/4: DONE!!\n\n")
+    time.sleep(1)
+    # sys.exit()
+
+    ##### 3. Read the scoring input extend file and change coordinates ##########
+    print("Step 3/4: Reading validated targets in list")
+    ResFls = [file for file in os.listdir('./output') if file.endswith ('_validated')]
+    for afile in ResFls:
+        print("Caching results '%s' for reverse mapping"% (afile))
+        fh_in       = open('./output/%s' % afile, 'r')### PARE VALIDATED results
+        header      = fh_in.readline() ## Waste header
+        ScoInpExt   = [] ## list of final results or parlist
+        acount      = 0  ## All entries
+        for res in fh_in:
+            acount      +=1
+            res_strp    = res.strip('\n')
+            ent         = res_strp.split(',')
+            ScoInpExt.append(ent)
+
+
+        print("%s results in cached from validated file:%s" % (afile,acount))
+        print("Step 3/4: DONE!!\n\n")
+        time.sleep(1)
+
+        ## Rev Map #######
+        ##################
+        print("Step 4/4: Reverse mapping using coords dict and targets list")
+        
+        ## # TEST- SINGLE CORE - For troubleshooting ----##
+        print('\n***Entering genomicCoord- Serial***\n')
+        ValidTarGeno = []
+        for i in ScoInpExt:
+            print("\nEntry for reverse mapping:%s" % (i))
+            z = genomicCoord(i)
+            ValidTarGeno.append(z)
+        
+        ##  NORMAL- PARALLEL MODE - Comment test above for normal use  
+        # print('\n***Entering genomicCoord - parallel***\n')
+        # print('**Reverse mapping initiated**\n\n')
+        # ValidTarGeno = PPResults(genomicCoord, ScoInpExt) ## Results are in form of list
+        
+        print ('Reverse mapping complete for:%s\n\n\n' % (afile))
+        print("Step 4/4: Done!!\n\n")
+        time.sleep(1)
+
+        #### WRITE RESULTS ##############
+        ################################
+
+        print ("Writing Results")
+        # os.remove(uniqRevmapped) #Remove previous "AllLibValidatedUniq_revmapped.csv"    
+        revmapRes   = './output/%s_revmapped.csv' % (afile)
+        fh_out      = open(revmapRes, 'w')
+        fh_out.write('%s,Chr,Strand,genomeCleavePosition,genomeBindStart,GenomeBindEnd\n' % (header.strip('\n')))
+        
+        for i in ValidTarGeno: ## Write Results from list to file
+            if i != 'E13-3-13':##Filter for error 13-13-13 that is small window abundance = 0 and ratio calculation error
+                fh_out.write('%s\n' % (i))
+            else:
+                print (i)
+        fh_in.close()
+        fh_out.close()
+
+        ## Remove non revmapped file
+        if os.path.isfile(afile):
+            # print("validated file removed:%s" % (afile))
+            os.remove(afile)
+
+    return None
+
+    
+    ### END OF REVERSE MAP ##########
 
 ##############################################################################################
 #### MAIN FUNCTION ###########################################################################
 def main():
+
+    ## Pre-run check and imports ######################
+    checkLibs()
+    import rpy2,pyfasta,numpy
+    import rpy2.robjects as robjects
+    from scipy import stats
+    from rpy2.robjects.packages import importr
+    from rpy2.robjects.vectors import FloatVector
+    RStats = importr('stats')
+    ###################################################
+
+
     if args.generateFasta:
-        coords = extractFeatures(args.genomeFile,args.gffFile) ## Extracts Coords from GFF3
-        fastaOut = getFASTA1(args.genomeFile,coords) ##Creates FASTA file
+        chromoDict  = genomeReader(args.genomeFile)
+        coords      = extractFeatures(args.genomeFile,args.gffFile,chromoDict) ## Extracts Coords from GFF3
+        fastaOut    = getFASTA1(args.genomeFile,coords,chromoDict) ##Creates FASTA file
         unambiguousBaseCounter(fastaOut, args.minTagLen)
         print('This is the extracted file: %s' % (fastaOut))
     # 
@@ -1793,22 +2078,22 @@ def main():
         unambiguousBaseCounter(fastaOut, args.minTagLen)
     
     ### FRAGMENTATION ###################
-    ###Script Timer
-    runLog = 'runtime_%s' % datetime.datetime.now().strftime("%m_%d_%H_%M")
-    fh_run = open(runLog, 'w')
+    ### Script Timer
+    runLog      = 'runtime_%s' % datetime.datetime.now().strftime("%m_%d_%H_%M")
+    fh_run      = open(runLog, 'w')
     print('tarPred: %s | tarScore: %s | Uniq filter: %s' % (args.tarPred,args.tarScore,args.repeats))
     fh_run.write('tarPred:%s | tarScore: %s | Uniq filter:%s\nLibs:%s\nGenomeFile:%s | GenomeFeature:%s' % (args.tarPred,args.tarScore,args.repeats, ','.join(args.libs),args.genomeFile,args.genomeFeature))
     fh_run.write ('\nLibs: %s' % (','.join(args.libs)))
-    FragStart = time.time()
+    FragStart   = time.time()
     
     if args.fileFrag:
-        start = time.time()###time start
-        fragList = fragFASTA(fastaOut)##
-        end = time.time()
+        start       = time.time()###time start
+        fragList    = fragFASTA(fastaOut)##
+        end         = time.time()
         print ('fileFrag time: %s' % (round(end-start,2)))
     else:
-        fragMem = open('frag.mem','r')
-        fragRead = fragMem.readlines()
+        fragMem     = open('frag.mem','r')
+        fragRead    = fragMem.readlines()
         print("Frags from earlier processed file: '%s' will be used in this run" % (fragRead[0].strip('\n').split('=')[1]))
         for i in fragRead:
             akey,aval = i.strip('\n').split('=')
@@ -1827,7 +2112,7 @@ def main():
                 fragList =  i.split('=')[1].split(',')
                 #print('fragList from fragMem:', fragList)
         fragMem.close()
-        #fragList = [file for file in os.listdir() if re.search(r'.*\.[0-9].*\.fa', file)] # deprecated v1.03
+        #fragList = [file for file in os.listdir() if re.search(r'.*_seq\.[0-9].*\.fa', file)] # deprecated v1.03
         print ('The fragments: %s' % (fragList))
         
     FragEnd = time.time()
@@ -1850,8 +2135,8 @@ def main():
 
         # Bug found by Uciel Pablo. Moved this line from outside of if 
         # clause to within as this is only run if tarPred is on.
-        miRs = miRinput()
-        start = time.time()###time start
+        miRs    = miRinput()
+        start   = time.time()###time start
         
         ## Test mode - To find errors ###
         # for i in fragList:
@@ -1859,9 +2144,8 @@ def main():
         
         ## Parallel mode
         PP(tarFind4,fragList)
-        end = time.time()
+        end     = time.time()
         print ('Target Prediction time: %s' % (round(end-start,2)))
-        
         
         targComb = FileCombine()
         #targComb = 'All.targs' ## Test - open line above when real
@@ -1892,136 +2176,139 @@ def main():
     fh_run.write('Target prediction time is : %s\n' % (round(TFEnd-TFStart,2)))
     #########################################
     
-    ## PARE PROCESS AND MAP #################
-    PAREStart = time.time()
+    # ## PARE PROCESS AND MAP #################
+    # PAREStart = time.time()
     
-    if args.tag2FASTA:
-        shutil.rmtree('./PARE',ignore_errors=True)
-        os.mkdir('./PARE')
-        PP(tag2FASTA2,args.libs)
+    # if args.tag2FASTA:
+    #     shutil.rmtree('./PARE',ignore_errors=True)
+    #     os.mkdir('./PARE')
+    #     PP(tag2FASTA2,args.libs)
     
-    indexFls = [file for file in os.listdir('./index') if file.endswith ('index.1.bt2')]
-    print ('These are index files: ',indexFls)
+    # indexFls = [file for file in os.listdir('./index') if file.endswith ('index.1.bt2')]
+    # print ('These are index files: ',indexFls)
     
-    if args.map2DD:
-        shutil.rmtree('./dd_map',ignore_errors=True)
-        os.mkdir('./dd_map')
-        global templib
-        for templib in args.libs:
-            ## Serial -Test
-            #for dd in indexFls:
-                #print ('Lib:%s mapped to index: %s' % (templib,dd))
-                #mapdd2trans(dd)
+    # if args.map2DD:
+    #     shutil.rmtree('./dd_map',ignore_errors=True)
+    #     os.mkdir('./dd_map')
+    #     global templib
+    #     for templib in args.libs:
+    #         ## Serial -Test
+    #         #for dd in indexFls:
+    #             #print ('Lib:%s mapped to index: %s' % (templib,dd))
+    #             #mapdd2trans(dd)
             
-            ###
-            PP(mapdd2trans,indexFls)
+    #         ###
+    #         PP(mapdd2trans,indexFls)
     
-    ##Timer
-    PAREEnd = time.time()
-    print ('\n\nPARE processing run time is %s\n\n' % (round(PAREEnd-PAREStart,2)))
-    fh_run.write('PARE processing and mapping time is : %s\n' % (round(PAREEnd-PAREStart,2)))
-    ## INDEXER ##############################
-    ###
-    PredStart = time.time()
+    # ##Timer
+    # PAREEnd = time.time()
+    # print ('\n\nPARE processing run time is %s\n\n' % (round(PAREEnd-PAREStart,2)))
+    # fh_run.write('PARE processing and mapping time is : %s\n' % (round(PAREEnd-PAREStart,2)))
+    # ## INDEXER ##############################
+    # ###
+    # PredStart = time.time()
     
-    if args.validate:
-        fastaOut = './genomic_seq.fa'
-        predTargets = './predicted/All.targs.parsed.csv'
-        shutil.rmtree('./PAGe',ignore_errors=True)
-        os.mkdir('./PAGe')
-        shutil.rmtree('./output', ignore_errors=True)
-        os.mkdir('./output')
-        validatedTargetsFilename = './output/MPPPValidated.csv'
+    # if args.validate:
+    #     fastaOut = './genomic_seq.fa'
+    #     predTargets = './predicted/All.targs.parsed.csv'
+    #     shutil.rmtree('./PAGe',ignore_errors=True)
+    #     os.mkdir('./PAGe')
+    #     shutil.rmtree('./output', ignore_errors=True)
+    #     os.mkdir('./output')
+    #     validatedTargetsFilename = './output/MPPPValidated.csv'
     
-        # 
-        targetFinderFile = readFile(predTargets)
-        # 
-        header = targetFinderFile[0]
-        del(targetFinderFile[0])
+    #     # 
+    #     targetFinderFile = readFile(predTargets)
+    #     # 
+    #     header = targetFinderFile[0]
+    #     del(targetFinderFile[0])
     
-        # 
-        global targetFinderList
-        targetFinderList = createTargetFinderDataStructure(
-            targetFinderFile)
+    #     # 
+    #     global targetFinderList
+    #     targetFinderList = createTargetFinderDataStructure(
+    #         targetFinderFile)
     
-        # 
-        baseCountsFile = readFile('baseCounts.mem')
-        baseCounts = int(baseCountsFile[0])
-        baseCountsOffTagLen = int(baseCountsFile[1])
+    #     # 
+    #     baseCountsFile = readFile('baseCounts.mem')
+    #     baseCounts = int(baseCountsFile[0])
+    #     baseCountsOffTagLen = int(baseCountsFile[1])
     
-        for tagCountFilename in args.libs:
-            PAGeIndexDict = {}
-            # Variable holding all hits > 2
-            allHits = []
-            PAGeIndexList = []
-            global tagCountFile
-            tagCountFile = readFile(tagCountFilename)
-            library = os.path.splitext(tagCountFilename)[0]
-            PAGeOutputFilename = './PAGe/%s_PAGe' % library
-            validatedTargetsFilename = './output/%s_validated' % library
+    #     for tagCountFilename in args.libs:
+    #         PAGeIndexDict = {}
+    #         # Variable holding all hits > 2
+    #         allHits = []
+    #         PAGeIndexList = []
+    #         global tagCountFile
+    #         tagCountFile = readFile(tagCountFilename)
+    #         library = os.path.splitext(tagCountFilename)[0]
+    #         PAGeOutputFilename = './PAGe/%s_PAGe' % library
+    #         validatedTargetsFilename = './output/%s_validated' % library
     
 
-            bowtieFiles = [file for file in os.listdir('dd_map') if file.startswith('%s' % library)]
-            print("Creating PAGe Index dictionary for lib %s" % library)
-            PAGeStart = time.time()
+    #         bowtieFiles = [file for file in os.listdir('dd_map') if file.startswith('%s' % library)]
+    #         print("Creating PAGe Index dictionary for lib %s" % library)
+    #         PAGeStart = time.time()
             
-            # 
-            PAGeIndexAndHits = PPResults(createPAGeIndex, bowtieFiles)
-            # 
-            for element in PAGeIndexAndHits:
-                PAGeIndexDict.update(element[0])
-                allHits.extend(element[1])
-                PAGeIndexList.append(element[0])
+    #         # 
+    #         PAGeIndexAndHits = PPResults(createPAGeIndex, bowtieFiles)
+    #         # 
+    #         for element in PAGeIndexAndHits:
+    #             PAGeIndexDict.update(element[0])
+    #             allHits.extend(element[1])
+    #             PAGeIndexList.append(element[0])
 
-            PAGeEnd = time.time()
-            print("PAGe Indexing took %.2f seconds" % (PAGeEnd - PAGeStart))
-            fh_run.write("PAGe Indexing took: %.3f seconds\n" % (PAGeEnd-PAGeStart))
+    #         PAGeEnd = time.time()
+    #         print("PAGe Indexing took %.2f seconds" % (PAGeEnd - PAGeStart))
+    #         fh_run.write("PAGe Indexing took: %.3f seconds\n" % (PAGeEnd-PAGeStart))
     
-            # 
-            print("Writing PAGeIndex file...")
-            PAGeWriteStart = time.time()
-            global categoryList
-            categoryList = writePAGeFile(PAGeIndexDict, args.genomeFeature,
-                allHits, baseCounts, baseCountsOffTagLen, PAGeOutputFilename,
-                fastaOut, library)
-            PAGeWriteEnd = time.time()
-            print("File written. Process took %.2f seconds" % (PAGeWriteEnd - PAGeWriteStart))
-            fh_run.write("PAGe index file written. Process took %.2f seconds\n" % (PAGeWriteEnd - PAGeWriteStart))
+    #         # 
+    #         print("Writing PAGeIndex file...")
+    #         PAGeWriteStart = time.time()
+    #         global categoryList
+    #         categoryList = writePAGeFile(PAGeIndexDict, args.genomeFeature,
+    #             allHits, baseCounts, baseCountsOffTagLen, PAGeOutputFilename,
+    #             fastaOut, library)
+    #         PAGeWriteEnd = time.time()
+    #         print("File written. Process took %.2f seconds" % (PAGeWriteEnd - PAGeWriteStart))
+    #         fh_run.write("PAGe index file written. Process took %.2f seconds\n" % (PAGeWriteEnd - PAGeWriteStart))
     
-            # 
-            print("Finding the validated targets")
-            validatedTargetsStart = time.time()
+    #         # 
+    #         print("Finding the validated targets")
+    #         validatedTargetsStart = time.time()
             
-            # 
-            # 
-            validatedTargetsList = PPResults(validatedTargetsFinder, PAGeIndexList)
-            validatedTargets = []
-            for validatedTarget in validatedTargetsList:
-                validatedTargets.extend(validatedTarget)
+    #         # 
+    #         # 
+    #         validatedTargetsList = PPResults(validatedTargetsFinder, PAGeIndexList)
+    #         validatedTargets = []
+    #         for validatedTarget in validatedTargetsList:
+    #             validatedTargets.extend(validatedTarget)
 
-            validatedTargetsEnd = time.time()
-            print("All validated targets found in %.2f seconds" % (validatedTargetsEnd - validatedTargetsStart))
-            fh_run.write("All validated targets found in %.2f seconds\n" % (validatedTargetsEnd - validatedTargetsStart))
+    #         validatedTargetsEnd = time.time()
+    #         print("All validated targets found in %.2f seconds" % (validatedTargetsEnd - validatedTargetsStart))
+    #         fh_run.write("All validated targets found in %.2f seconds\n" % (validatedTargetsEnd - validatedTargetsStart))
             
-            # 
-            # 
-            if(validatedTargets):
-                # print(validatedTargets)
-                print("Writing validated targets")
-                writeValidatedTargetsFile(header, validatedTargets,
-                    validatedTargetsFilename)
+    #         # 
+    #         # 
+    #         if(validatedTargets):
+    #             # print(validatedTargets)
+    #             print("Writing validated targets")
+    #             writeValidatedTargetsFile(header, validatedTargets,
+    #                 validatedTargetsFilename)
 
-            else:
-                print("No targets could be validated for the set of miRNAs "\
-                      "in lib %s." % library)
+    #         else:
+    #             print("No targets could be validated for the set of miRNAs "\
+    #                   "in lib %s." % library)
 
-    
-    resultUniq()
-    PredEnd = time.time()
-    print ('\n\nIndexing and Prediction run time is %s\n\n' % (round(PredEnd-PredStart,2)))
-    fh_run.write('Indexing and Prediction run time is : %s seconds \n' % (round(PredEnd-PredStart,2)))
-    fh_run.write('Script run time is : %s\n' % (round(PredEnd-FragStart,2)))
-    fh_run.close()
+    ## Revmap results
+    ReverseMapping()
+    ## Combine results from Multiple libraries
+    uniqRevmapped = resultUniq() # uniqRevmapped='./output/AllLibValidatedUniq.csv'
+
+    # PredEnd = time.time()
+    # print ('\n\nIndexing and Prediction run time is %s\n\n' % (round(PredEnd-PredStart,2)))
+    # fh_run.write('Indexing and Prediction run time is : %s seconds \n' % (round(PredEnd-PredStart,2)))
+    # fh_run.write('Script run time is : %s\n' % (round(PredEnd-FragStart,2)))
+    # fh_run.close()
 
 #### RUN ##########################################
 
@@ -2084,3 +2371,15 @@ if __name__ == '__main__':
 ## v1.14 -> v1.15
 ## Fixed a bug causing minTagLen and maxTagLen to be stored as strings rather 
 ## than intergers if supplied by the user at the command line.
+
+## v1.15 -> v1.16
+## Added revFerno: Reverse maps sPARTA results to genome co-ordinates -AK/PP
+
+## v1.16 -> v1.17b
+## Modified extractFeature module for better compatibility wit scaffolded genome -AK
+## Fixed minor bug where any input fasta file having number in its name would be deleted
+## Fixed target prediction switch so that running w/o pare validation gives no error - RH
+## Added GTF comaptibility
+## 'w' and 'c' set to lower case for all modules
+## Cleaned/Organized the code and on-screen messages
+## Added a new function to check fro libraries before running sPARTA
