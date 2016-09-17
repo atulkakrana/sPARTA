@@ -2385,6 +2385,9 @@ if __name__ == '__main__':
 ## Added reverse mapping as default
 
 ## v1.17 -> v1.18 [Pending]
-## Added GTF comaptibility
+## Added GTF comaptibility, to make it comaptible with cufflinks experiments
+## Remove rpy2 depenency
+## Fine tune paralleization in validation part
+## Add degradome plots
 
 
