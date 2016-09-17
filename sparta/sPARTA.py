@@ -2379,7 +2379,12 @@ if __name__ == '__main__':
 ## Modified extractFeature module for better compatibility wit scaffolded genome -AK
 ## Fixed minor bug where any input fasta file having number in its name would be deleted
 ## Fixed target prediction switch so that running w/o pare validation gives no error - RH
-## Added GTF comaptibility
 ## 'w' and 'c' set to lower case for all modules
 ## Cleaned/Organized the code and on-screen messages
-## Added a new function to check fro libraries before running sPARTA
+## Added a new function to check for libraries before running sPARTA
+## Added reverse mapping as default
+
+## v1.17 -> v1.18 [Pending]
+## Added GTF comaptibility
+
+
