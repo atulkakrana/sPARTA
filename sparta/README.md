@@ -2,7 +2,7 @@
 <body>
 <h2>sPARTA</h2>
 <b>s</b>mall RNA-<b>PA</b>RE <b>T</b>arget <b>A</b>nalyzer<br> 
-Updated: version-1.11 4/1/2015
+Updated: version-1.15 05/18/2016
 <h2><b>Description</b></h2>
 small RNA-PARE Target Analyzer (sPARTA) is a tool which utilizes
 high-throughput sequencing to profile genome-wide cleavage products.
@@ -18,7 +18,6 @@ footprint, imperative to achieve a full genome analysis.
 
 sPARTA requires the following python3 functions to perform properly:<br></body></html>
 `numpy` - <html><body>http://www.numpy.org/<br></body></html>
-`pyfasta` - <html><body>https://pypi.python.org/pypi/pyfasta/<br></body></html>
 `rpy2` - <html><body>http://rpy.sourceforge.net/<br></body></html>
 `scipy` - <html><body>http://www.scipy.org/<br>
 <br>
@@ -72,9 +71,12 @@ gff file. So either genomefile along with gffFile is used or
 normal. S is default if no mode is specified</td></tr>
 <tr><td>-libs</td><td> List of PARE library files in tag count format. Data can be
  easily converted into tag count format using <a href="http://www.ebi.ac.uk/~stijn/reaper/tally.html" target="_blank">tally</a></td></tr>
-<tr><td>-tagLen</td>       
-<td> Minimum length of PARE tag, tags longer than tagLen will be
-chopped to the specified length. 20 is default</td></tr>
+<tr><td>-minTagLen</td>       
+<td> Minimum length of PARE tag. Tags shorter than minTagLen will be
+discarded. 20 is default</td></tr>
+<tr><td>-maxTagLen</td>
+<td> Maximum length of PARE tag. Tags longer than maxTagLen will be
+chopped to the specified length. 30 is default
 <tr><td>-accel</td> 
 <td>Y to use balanced multiple process scheme or else specify the
              number of processors to be used. Y is default</td></tr>
@@ -147,6 +149,10 @@ Results from all libs were combined by removing redundant miRNA-target interacti
 `All.targs.parsed.csv`
 <html>
 <body>
+<h2>Publications</h2>
+Kakrana, A., Hammond, R., Patel, P., Nakano, M. & Meyers, B. C. sPARTA: a parallelized pipeline for integrated analysis of plant miRNA and cleaved mRNA data sets, including new miRNA target-identification software. Nucleic Acids Res. gku693– (2014).  doi:10.1093/nar/gku693 <a href="http://www.ncbi.nlm.nih.gov/pubmed/25120269">[Link]</a><br><br>
+
+Arikit, S., Xia, R., Kakrana, A., Huang, K., Zhai, J., Yan, Z., … Meyers, B. C. (2014). An Atlas of Soybean Small RNAs Identifies Phased siRNAs from Hundreds of Coding Genes. The Plant Cell. http://doi.org/10.1105/tpc.114.131847 <a href="http://www.ncbi.nlm.nih.gov/pubmed/25465409">[Link]</a>
 <h2><b>Contact</b></h2>
 Atul Kakrana<br>
 kakrana@udel.edu<br>

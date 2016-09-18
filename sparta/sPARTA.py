@@ -1,5 +1,5 @@
 ## sPARTA: small RNA-PARE Target Analyzer public version 
-## Updated: version-1.17b 05/18/2016
+## Updated: version-1.18 05/18/2016
 ## Property of Meyers Lab at University of Delaware
 ## Author: kakrana@udel.edu
 ## Author: rkweku@udel.edu
@@ -176,13 +176,13 @@ def checkLibs():
         print("--scipy  : found")
         pass
 
-    isPyfasta   = importlib.find_loader('pyfasta')
-    if isPyfasta is None:
-        print("--pyfasta: missing")
-        goSignal    = 0
-    else:
-        print("--pyfasta: found")
-        pass
+    # isPyfasta   = importlib.find_loader('pyfasta')
+    # if isPyfasta is None:
+    #     print("--pyfasta: missing")
+    #     goSignal    = 0
+    # else:
+    #     print("--pyfasta: found")
+    #     pass
 
     if goSignal == 0:
         print("\nPlease install missing libraries before running the analyses")
@@ -405,6 +405,7 @@ def getFASTA1(genomeFile,coords,chromoDict):
     fastaOut = './genomic_seq.fa'
     fh_out = open(fastaOut, 'w')
 
+    fastaList = [] ## Stores name and seq for fastFile
     chromo_mem = []
     for i in coords: ## Coords is list from gff parser
         #print (i)
@@ -418,7 +419,7 @@ def getFASTA1(genomeFile,coords,chromoDict):
         if tuple(i[0:2]) not in chromo_mem: 
             chromo_mem.append(tuple(i[0:2]))   ##
             print("\n++Reading chromosome:%s and strand:'%s' ################" % (i[0],i[1]) )
-            print('--Gene:%s | Start:%s End:%s Chr:%s Strand:%s' % (gene,start,end,chr_id,strand))
+            # print('--Gene:%s | Start:%s End:%s Chr:%s Strand:%s' % (gene,start,end,chr_id,strand))
             print("--Fetching gene:%s" % (gene))
             chrKey = i[0]
             chromo = str(chromoDict[chrKey])
@@ -433,88 +434,180 @@ def getFASTA1(genomeFile,coords,chromoDict):
             if strand == 'c':
                 gene_seq_rev = gene_seq[::-1].translate(str.maketrans("TAGC","ATCG"))
                 fh_out.write('>%s\n%s\n' % (gene,gene_seq_rev))
+                fastaList.append((gene,gene_seq_rev))
             else:
                 fh_out.write('>%s\n%s\n' % (gene,gene_seq))
+                fastaList.append((gene,gene_seq))
     
         elif end == '-': ##
-            print('--Gene:%s | Start:%s End:%s Chr:%s Strand:%s' % (gene,start,end,chr_id,strand))
+            # print('--Gene:%s | Start:%s End:%s Chr:%s Strand:%s' % (gene,start,end,chr_id,strand))
             print("--Fetching gene:%s" % (gene))
             gene_seq = chromo[start:]##
             #print(gene_seq)
             if strand == 'c':
                 gene_seq_rev = gene_seq[::-1].translate(str.maketrans("TAGC","ATCG"))
                 fh_out.write('>%s\n%s\n' % (gene,gene_seq_rev))
+                fastaList.append((gene,gene_seq_rev))
                 
             else:
                 fh_out.write('>%s\n%s\n' % (gene,gene_seq))
+                fastaList.append((gene,gene_seq))
             
         else:
-            print('--Gene:%s | Start:%s End:%s Chr:%s Strand:%s' % (gene,start,end,chr_id,strand))
+            # print('--Gene:%s | Start:%s End:%s Chr:%s Strand:%s' % (gene,start,end,chr_id,strand))
             print("--Fetching gene:%s" % (gene))
             gene_seq = chromo[start:end]##
             #print(gene_seq)
             if strand == 'c':
                 gene_seq_rev = gene_seq[::-1].translate(str.maketrans("TAGC","ATCG"))
                 fh_out.write('>%s\n%s\n' % (gene,gene_seq_rev))
+                fastaList.append((gene,gene_seq_rev))
                 
             else:
                 fh_out.write('>%s\n%s\n' % (gene,gene_seq))
+                fastaList.append((gene,gene_seq))
 
     time.sleep(10)
     fh_out.close()
     
-    return fastaOut
+    return fastaOut,fastaList
 
-def fragFASTA(FASTA):
+def fastaReader(fastaFile):
     
+    '''Cleans FASTA file - multi-line fasta to single line, header clean, empty lines removal'''
+
+    print("\nFn - fastaReader")
+    ## Read seqeunce file
+    print ('+Reading "%s" FASTA file' % (fastaFile))
+    fh_in       = open(fastaFile, 'r')
+    fasta       = fh_in.read()
+    fasta_splt  = fasta.split('>')
+    acount      = 0 ## count the number of entries
+    empty_count = 0
+
+    fastaList = [] ## Stores name and seq for fastFile
+    # fastaDict = {}
+
+    acount +=1
+    for i in fasta_splt[1:]:
+        acount  +=1
+        ent     = i.split('\n')
+        name    = ent[0].split()[0].strip()
+        seq     = ''.join(x.strip() for x in ent[1:]) ## Sequence in multiple lines
+        # alen    = len(seq)
+        if seq:
+            fastaList.append((name,seq))
+            # fastaDict[name] = seq
+
+    print("--Total entries in phased fastaFile:%s" % (str(acount)))
+    print("--fastaList generated with %s entries\n" % (str(len(fastaList)))) ## Does not counts an empty enry from split
+
+    return fastaList
+
+def fragmentor(FASTA,fastaList,nseq,nfrags):
+    '''
+    fragments and writes frags
+    '''
+    aslice      = int(nseq/nfrags) ## not round to float, float added to remainder
+    remainder   = nseq%nfrags
+    print("--Number of seqeunces:%s | required fragments:%s | computed splice:%s | remainder seqeunces:%s" % (nseq,nfrags,aslice,remainder))
+
+    sliceStart      = 0 ## Keep track of slice end
+    sliceEnd        = aslice
+    acount          = 0
+    for x in range (int(nfrags+1)): ## Extra one for remainder
+        if x < 10:
+            afile   = "%s.frag.0%s.fa" % (FASTA.rpartition('.')[0],x)
+            fh_out  = open(afile,'w')
+        else:
+            afile   = "%s.frag.%s.fa" % (FASTA.rpartition('.')[0],x)
+            fh_out  = open(afile,'w')
+
+        if x < nfrags: ## '<' because the 'x' starts from zero and goes till nfrags-1. if nfrags = 30, x will go from 0 to 29. The last bin (nfrag+1) will have value 30 and is captured below
+            ## Slice list
+            print("--Fragment:%s | sliceStart:%s | sliceEnd:%s" % (acount,sliceStart,sliceEnd))
+            alist       = fastaList[sliceStart:sliceEnd]
+            #write fasta
+            for ent in alist:
+                name    = ent[0].split()[0].strip()
+                seq     = ''.join(x.strip() for x in ent[1:]) ## Sequence in multiple lines
+                fh_out.write('>%s\n%s\n' % (name,seq))
+
+            ## Slice update
+            acount      += 1
+            sliceStart  += aslice
+            sliceEnd    += aslice
+
+        else: ## Write remaineder seqeunces in last file
+            print("--Fragment:%s | sliceStart:%s | sliceEnd: Till end" % (acount,sliceStart))
+            alist       = fastaList[sliceStart:]
+            #write fasta
+            for ent in alist:
+                name    = ent[0].split()[0].strip()
+                seq     = ''.join(x.strip() for x in ent[1:]) ## Sequence in multiple lines
+                fh_out.write('>%s\n%s\n' % (name,seq))
+                acount      += 1
+
+        fh_out.close()
+
+    return None
+
+def fragFASTA(FASTA,fastaList):
+
+    print('Fn - fragFASTA')
     ## Purge fragmented files from earlier run
     shutil.rmtree('./genome', ignore_errors=True)
     os.mkdir('./genome')
     
-    pattern = ".*_seq\.[0-9].*\.fa" #
-    print ("\n***Purging older files***")
+    pattern = ".*\.frag\.[0-9].*\.fa" #
+    print ("+Purging older files")
     for file in os.listdir():
         if re.search(pattern,file):
-            print (file,'is being deleted')
+            print ('--%s is being deleted' % (file))
             os.remove(file)
     
-    ## Frag User FASTA file
+    ## Compute nfrags and seq. per frag user FASTA file ######
     statInfo = os.stat(FASTA)
     filesize = round(statInfo.st_size/1048576,2)
-    print('\n**Size of FASTA file: %sMB**' % (filesize))##
+    print('\n+Input FASTA size: %sMB**' % (filesize))##
     
     if filesize <= args.splitCutoff: ## 
         fls = []
         fls.append(FASTA)
-        print ('No fragmentation performed for file %s' % (fls))
+        print ('--No fragmentation performed for file %s' % (fls))
         
     else:
-        fh_in       = open(FASTA, 'r')
-        seq_count   = fh_in.read().count('>')
-        print('**Number of headers in file: %s**\n'% (seq_count))
+        # fh_in       = open(FASTA, 'r')
+        # seq_count   = fh_in.read().count('>')
+        nseq        = len(fastaList)
+        print('--Number of headers in file: %s'% (nseq))
         #if genome == 'N':
-        if seq_count >= 30: #
-            
-            if filesize <= 3072:
-                splitnum = str(args.maxHits)
-            elif filesize > 3072 and filesize <= 5120:
-                splitnum = str(round(args.maxHits*1.25))
+        if nseq >= 30: #
+            if filesize     <= 3072:
+                nfrags    = int(args.maxHits)
+            elif filesize   > 3072 and filesize <= 5120:
+                nfrags    = int(round(args.maxHits*1.25))
             else:
-                splitnum = str(round(args.maxHits*1.5))        
+                nfrags    = int(round(args.maxHits*1.5))        
             
-            print ("Size based fragmentation in process for '%s' file" % (FASTA))
-            retcode = subprocess.call(["pyfasta","split", "-n", splitnum, FASTA])
-            fls = [file for file in os.listdir() if re.search(r'.*_seq\.[0-9].*\.fa', file)] ## file list using regex
+            print ("--Size based fragmentation in process for '%s' file" % (FASTA))
+
+            # retcode = subprocess.call(["pyfasta","split", "-n", nfrags, FASTA]) - Deprecated
+
+            fragmentor(FASTA,fastaList,nseq,nfrags)
+            fls = [file for file in os.listdir() if re.search(r'.*\.frag\.[0-9].*\.fa', file)] ## file list using regex
             #fls = glob.glob(r'%s.[0-9]{1-3}.fa' % (FASTA.split('.')[0])) ## fragmented file list ##
             #print ('The fragments: %s' % (fls))
                
         
-        else: ## 
-            splitnum = str(seq_count) ## 
+        else:
+            nfrags = str(nseq) ## 
             if fragFasta == 'Y':
-                print ("Header based fragmentation in process for '%s' file" % (FASTA))
-                retcode = subprocess.call(["pyfasta","split", "-n", splitnum, FASTA])
-            fls = [file for file in os.listdir() if re.search(r'.*_seq\.[0-9].*\.fa', file)]
+                print ("--Header based fragmentation in process for '%s' file" % (FASTA))
+                # retcode = subprocess.call(["pyfasta","split", "-n", nfrags, FASTA]) - Deprecated
+                
+                fragmentor(FASTA,fastaList,nseq,frags)
+                fls = [file for file in os.listdir() if re.search(r'.*\.frag\.[0-9].*\.fa', file)]
 
             
             #print ('The fragments: %s' % (fls))
@@ -1822,39 +1915,40 @@ def writeValidatedTargetsFile(header, validatedTargets, outputFile):
                     else:
                         f.write(',')
 
-def resultUniq():
+def resultUniq(filetag):
     
     """Read validated files for each library 
     and generate a single file with unique results"""
 
-    revmapped_fls = [file for file in os.listdir('./output') if re.search(r'revmapped.csv', file)]
-    #validated_fls = [file for file in os.listdir('./output') if file.endswith ('revmapped.csv')]
+    # fls = [file for file in os.listdir('./output') if re.search(r'revmapped.csv', file)]
+    fls = [file for file in os.listdir('./output') if file.endswith (filetag)]
     
-    print ('Files with lib-wise results:',revmapped_fls)
-    print ('\nCombining results from all the files to generate a single report\n')
+    print ('\n+Combining results from all the files to generate a single report\n')
+    print ('--Files with lib-wise results:',fls)
+
     
-    validatedComb   = './output/ALLLibCombinedRedundant.csv'
+    validatedComb   = './output/temp.csv'
     fh_out          = open(validatedComb ,'w')
     
     ## Combine files
     header = "" 
-    for x in revmapped_fls: 
-        print (x)
-        revamppedfile   = open('./output/%s' % (x), 'r')
-        header          = revamppedfile.readline().strip('\n') ## Use later
-        data            = revamppedfile.read()
-        revamppedfile.close()
+    for x in fls: 
+        # print (x)
+        afile   = open('./output/%s' % (x), 'r')
+        header          = afile.readline().strip('\n') ## Use later
+        data            = afile.read()
+        afile.close()
         fh_out.write(data)
     fh_out.close()
     
     ## Sort combined result file:
-    fh_in       =open(validatedComb, 'r') 
+    fh_in       = open(validatedComb, 'r') 
     parsed_in   = [line.strip('\n').split(',') for line in fh_in]
     parsed_in.sort(key=lambda k: (-int(k[9]) )) ## PARE and corrected p-value
     parsed_in.sort(key=lambda k: (float(k[14]) ))
 
-    uniqRevmapped   = './output/All.Libs.Validated.Uniq.csv'
-    fh_output2      =open(uniqRevmapped, 'w')
+    uniqRevmapped   = './output/All.libs.validated.uniq.csv'
+    fh_output2      = open(uniqRevmapped, 'w')
     fh_output2.write("%s\n" % header)
 
     ## Uniq
@@ -1870,10 +1964,13 @@ def resultUniq():
             added_keys.add(lookup)## Once a new entry is found it is recorded so as to compare and neglect further entries
         else:
             pass
-    
-    fh_output2.close()
+
     if os.path.isfile(validatedComb):
         os.remove(validatedComb)
+
+    fh_in.close()
+    fh_out.close()
+    fh_output2.close()
     
     return uniqRevmapped
 
@@ -2006,18 +2103,18 @@ def ReverseMapping():
         ##################
         print("Step 4/4: Reverse mapping using coords dict and targets list")
         
-        ## # TEST- SINGLE CORE - For troubleshooting ----##
-        print('\n***Entering genomicCoord- Serial***\n')
-        ValidTarGeno = []
-        for i in ScoInpExt:
-            print("\nEntry for reverse mapping:%s" % (i))
-            z = genomicCoord(i)
-            ValidTarGeno.append(z)
+        # ## # TEST- SINGLE CORE - For troubleshooting ----##
+        # print('\n***Entering genomicCoord- Serial***\n')
+        # ValidTarGeno = []
+        # for i in ScoInpExt:
+        #     print("\nEntry for reverse mapping:%s" % (i))
+        #     z = genomicCoord(i)
+        #     ValidTarGeno.append(z)
         
-        ##  NORMAL- PARALLEL MODE - Comment test above for normal use  
-        # print('\n***Entering genomicCoord - parallel***\n')
-        # print('**Reverse mapping initiated**\n\n')
-        # ValidTarGeno = PPResults(genomicCoord, ScoInpExt) ## Results are in form of list
+        ## NORMAL- PARALLEL MODE - Comment test above for normal use  
+        print('\n***Entering genomicCoord - parallel***\n')
+        print('**Reverse mapping initiated**\n\n')
+        ValidTarGeno = PPResults(genomicCoord, ScoInpExt) ## Results are in form of list
         
         print ('Reverse mapping complete for:%s\n\n\n' % (afile))
         print("Step 4/4: Done!!\n\n")
@@ -2040,10 +2137,10 @@ def ReverseMapping():
         fh_in.close()
         fh_out.close()
 
-        ## Remove non revmapped file
-        if os.path.isfile(afile):
+        ## Remove non-revmapped file (_validated files)
+        if os.path.isfile('./output/%s' % afile):
             # print("validated file removed:%s" % (afile))
-            os.remove(afile)
+            os.remove('./output/%s' % afile)
 
     return None
 
@@ -2056,7 +2153,8 @@ def main():
 
     ## Pre-run check and imports ######################
     checkLibs()
-    import rpy2,pyfasta,numpy
+    global rpy2,numpy,stats,importr,FloatVector,robjects
+    import rpy2,numpy
     import rpy2.robjects as robjects
     from scipy import stats
     from rpy2.robjects.packages import importr
@@ -2068,27 +2166,31 @@ def main():
     if args.generateFasta:
         chromoDict  = genomeReader(args.genomeFile)
         coords      = extractFeatures(args.genomeFile,args.gffFile,chromoDict) ## Extracts Coords from GFF3
-        fastaOut    = getFASTA1(args.genomeFile,coords,chromoDict) ##Creates FASTA file
+        fastaOut,fastaList    = getFASTA1(args.genomeFile,coords,chromoDict) ##Creates FASTA file
         unambiguousBaseCounter(fastaOut, args.minTagLen)
         print('This is the extracted file: %s' % (fastaOut))
     # 
     elif args.featureFile:
         print("\nThe input FASTA file is considered 'as is' for analysis\n")
-        fastaOut = args.featureFile ### Make it better
+        fastaOut    = args.featureFile ### Make it better
+        fastaList   = fastaReader(fastaOut)
         unambiguousBaseCounter(fastaOut, args.minTagLen)
+    else:
+        print("Please provide input to '--featureFile' or '--genomeFile'")
+        print("See sPARTA example commands: https://github.com/atulkakrana/sPARTA.github/tree/master/sparta")
+        print("Script will exit now")
     
     ### FRAGMENTATION ###################
     ### Script Timer
     runLog      = 'runtime_%s' % datetime.datetime.now().strftime("%m_%d_%H_%M")
     fh_run      = open(runLog, 'w')
-    print('tarPred: %s | tarScore: %s | Uniq filter: %s' % (args.tarPred,args.tarScore,args.repeats))
     fh_run.write('tarPred:%s | tarScore: %s | Uniq filter:%s\nLibs:%s\nGenomeFile:%s | GenomeFeature:%s' % (args.tarPred,args.tarScore,args.repeats, ','.join(args.libs),args.genomeFile,args.genomeFeature))
     fh_run.write ('\nLibs: %s' % (','.join(args.libs)))
     FragStart   = time.time()
     
     if args.fileFrag:
         start       = time.time()###time start
-        fragList    = fragFASTA(fastaOut)##
+        fragList    = fragFASTA(fastaOut,fastaList)##
         end         = time.time()
         print ('fileFrag time: %s' % (round(end-start,2)))
     else:
@@ -2112,7 +2214,7 @@ def main():
                 fragList =  i.split('=')[1].split(',')
                 #print('fragList from fragMem:', fragList)
         fragMem.close()
-        #fragList = [file for file in os.listdir() if re.search(r'.*_seq\.[0-9].*\.fa', file)] # deprecated v1.03
+        #fragList = [file for file in os.listdir() if re.search(r'.*\.frag\.[0-9].*\.fa', file)] # deprecated v1.03
         print ('The fragments: %s' % (fragList))
         
     FragEnd = time.time()
@@ -2123,7 +2225,7 @@ def main():
     
     ## TARGET PREDICTION ################### 
     TFStart = time.time()
-    
+    print('tarPred: %s | tarScore: %s | Uniq filter: %s' % (args.tarPred,args.tarScore,args.repeats))
     ## 
     if args.indexStep:
         shutil.rmtree('./index', ignore_errors=True)
@@ -2172,7 +2274,7 @@ def main():
     
     ###Timer
     TFEnd = time.time()
-    print ('\n\nTarget prediction is %s\n\n' % (round(TFEnd-TFStart,2)))
+    print ('\n\nTarget prediction time is %s\n\n' % (round(TFEnd-TFStart,2)))
     fh_run.write('Target prediction time is : %s\n' % (round(TFEnd-TFStart,2)))
     #########################################
     
@@ -2300,9 +2402,14 @@ def main():
                       "in lib %s." % library)
 
         ## Revmap results
-        ReverseMapping()
-        ## Combine results from Multiple libraries
-        uniqRevmapped = resultUniq() # uniqRevmapped='./output/AllLibValidatedUniq.csv'
+        if args.featureFile: ## User used feature file no reverse mapping
+            filetag         = '_validated'
+            uniqRevmapped   = resultUniq(filetag) # uniqRevmapped='./output/AllLibValidatedUniq.csv'
+        else:
+            ReverseMapping()
+            filetag         = 'revmapped.csv'
+            uniqRevmapped   = resultUniq(filetag) # uniqRevmapped='./output/AllLibValidatedUniq.csv'
+
 
     PredEnd = time.time()
     print ('\n\nIndexing and Prediction run time is %s\n\n' % (round(PredEnd-PredStart,2)))
@@ -2382,12 +2489,19 @@ if __name__ == '__main__':
 ## 'w' and 'c' set to lower case for all modules
 ## Cleaned/Organized the code and on-screen messages
 ## Added a new function to check for libraries before running sPARTA
-## Added reverse mapping as default
+## Added reverse mapping as default, done only when genomeFile is used to extract genomeFeature, noto in case of featureFile
 
-## v1.17 -> v1.18 [Pending]
+## v1.7 -> v1.8
+## Removed pyfasta requirement
+## Fixed bug with revrsemapping for analyses with --featureFile, since it's not possible, reversemapping turned off
+
+## v1.18 -> v1.19 [Pending]
 ## Added GTF comaptibility, to make it comaptible with cufflinks experiments
 ## Remove rpy2 depenency
 ## Fine tune paralleization in validation part
 ## Add degradome plots
+## fasta file is read once to fastaList. What does the 'unambiguousBaseCounter' function does with FASTA file? Can we use the fastaList to avoid file reading again?
+## Fragmented file names changed with extra 'frag' how does it affects Reza functions?
+## Which switches to use to not perform reverse mapping if feature file is supplied? Rename final uniq file to include 'revammpped' consitant with library specific files. 
 
 
