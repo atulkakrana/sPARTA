@@ -3,6 +3,7 @@
 ## Property of Meyers Lab at University of Delaware
 ## Author: kakrana@udel.edu
 ## Author: rkweku@udel.edu
+## Author: pupatel@udel.edu
 
 
 #### PYTHON FUNCTIONS ##############################
