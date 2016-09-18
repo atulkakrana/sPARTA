@@ -1,5 +1,5 @@
 ## sPARTA: small RNA-PARE Target Analyzer public version 
-## Updated: version-1.18 05/18/2016
+## Updated: version-1.18 9/18/2016
 ## Property of Meyers Lab at University of Delaware
 ## Author: kakrana@udel.edu
 ## Author: rkweku@udel.edu
