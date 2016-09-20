@@ -25,16 +25,16 @@ These may easily be installed using (Python) </body></html>`PIP`. <html><body>In
 <h2><b>Note</b></h2>
 </body>
 </html>
-0. In case you libraries needs pre-processing i.e. adapter removal and trimming, use pre-processing script here: https://github.com/atulkakrana/helper.github
+1. In case you libraries needs pre-processing i.e. adapter removal and trimming, use pre-processing script here: https://github.com/atulkakrana/helper.github
 
-1.sPARTA uses file extensions to identify file types, naming meta-data and selectively cleaning up temp files. Therefore, it is recommended to have appropriate file extensions.
+2.sPARTA uses file extensions to identify file types, naming meta-data and selectively cleaning up temp files. Therefore, it is recommended to have appropriate file extensions.
 For Ex. a genome/cDNA FASTA file should have `.fa` extension.
 Please see 'Arguments' section (below) for recommended file extensions.
 
-2.Make sure that input fasta files do not have integers in name. For ex - test.1.fa or arabidopsis.new.2.4.fa
+3.Make sure that input fasta files do not have integers in name. For ex - test.1.fa or arabidopsis.new.2.4.fa
 Files with such names are deleted sometimes while cleanup operation
 
-3.All the input files 1) </body></html>`miRNAs` 2)`FASTA` file for genome or transcripts and 3) `degradome/PARE` in tag-count format should be in same directory, including sPARTA script
+4.All the input files 1) </body></html>`miRNAs` 2)`FASTA` file for genome or transcripts and 3) `degradome/PARE` in tag-count format should be in same directory, including sPARTA script
 <html>
 </body>
 <h2><b>Execution</b></h2>
