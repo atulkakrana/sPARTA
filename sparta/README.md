@@ -2,7 +2,7 @@
 <body>
 <h2>sPARTA</h2>
 <b>s</b>mall RNA-<b>PA</b>RE <b>T</b>arget <b>A</b>nalyzer<br> 
-Updated: version-1.15 05/18/2016
+Updated: version-1.20 09/30/2016
 <h2><b>Description</b></h2>
 small RNA-PARE Target Analyzer (sPARTA) is a tool which utilizes
 high-throughput sequencing to profile genome-wide cleavage products.
@@ -45,9 +45,13 @@ may be seen below.</p>
 <h2><b>Arguments</b></h2><br>
 <table>
 <tr>
-<td>-gffFile</td>        
+<td>-annoFile</td>        
 <td>GFF3 file for the species being analyzed corresponding  to the genome assembly being used. Recommended file
- extension - '.gff' or '.gff3'</td>
+ extension - '.gff3' or '.gff3'</td>
+</tr>
+<td>-annoType</td>        
+<td>The annotation file format. Currently GFF3 and GTF formats are supported. This option is used with and corresponds
+ to the annoFile option</td>
 </tr>
 <tr>
 <td>-genomeFile</td>      
@@ -58,7 +62,7 @@ Recommended file extension - '.fa'</td>
 <td>FASTA file containing sequences of interest (CDS, transcript,
  intergenic regions etc.) if user already has a set of
  sequences. This option is mutually exclusive to genome file and
-gff file. So either genomefile along with gffFile is used or
+gff3 file. So either genomefile along with annoFile is used or
  feature set is supplied directly. Recommended file extension - '.fa'</td>
 </tr>
 <tr><td width="180">-genomeFeature</td>
@@ -107,7 +111,7 @@ Phytozome [http://www.phytozome.net/]<br>
 **1**. Execution on new genome/entirely new dataset
 This execution should be performed any time a new genome file (along with corresponding `GFF` file) is being analyzed:
 ```
-python3 sPARTA.py -genomeFile <genomeFile.fa> -gffFile <GFF3file> -genomeFeature <0/1> -miRNAFile <miRNAFile.fa> -libs <Lib_A.txt Lib_B.txt> -tarPred -tarScore --tag2FASTA --map2DD --validate
+python3 sPARTA.py -genomeFile <genomeFile.fa> -annoType <GTF/GFF3> -annoFile <annotationfile> -genomeFeature <0/1> -miRNAFile <miRNAFile.fa> -libs <Lib_A.txt Lib_B.txt> -tarPred -tarScore --tag2FASTA --map2DD --validate
 ```
 **OR**
 
@@ -130,7 +134,7 @@ python3 sPARTA.py -genomeFeature <0/1> -libs <Lib_C.txt Lib_D.txt> --map2DD --va
 **4**. Execution of 'miRferno', just for target prediction
 This execution should be performed in case only predicted targets are required or PARE libraries are not available:
 ```
-python3 sPARTA.py -genomeFile <genomeFile.fa> -gffFile <GFF3file> -genomeFeature <0/1> -miRNAFile <miRNAFile.fa> -tarPred -tarScore
+python3 sPARTA.py -genomeFile <genomeFile.fa> -annoType <GTF/GFF3> -annoFile <annotationfile> -genomeFeature <0/1> -miRNAFile <miRNAFile.fa> -tarPred -tarScore
 ```
 **OR**
 

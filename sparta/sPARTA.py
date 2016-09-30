@@ -1,5 +1,5 @@
 ## sPARTA: small RNA-PARE Target Analyzer public version 
-## Updated: version-1.19 9/18/2016
+## Updated: version-1.20 9/30/2016
 ## Property of Meyers Lab at University of Delaware
 ## Author: kakrana@udel.edu
 ## Author: rkweku@udel.edu
@@ -83,12 +83,12 @@ args = parser.parse_args()
 # featureFile is not given, exit.
 if(((args.annoFile and not args.genomeFile) or (args.genomeFile and not
         args.annoFile)) and (not args.featureFile)):
-    print("annoFile and genomeFile must both be given to create feature set")
+    print("annoFile and genomeFile both must be provided to extract seqeunces")
     exit()
 
 # If annoType is provided and not GFF or GTF, report the error and exit
 if(args.annoType and args.annoType != 'GFF' and args.annoType != 'GTF'):
-    print("annoType must be either GFF or GTF")
+    print("annoType must be either GFF3 or GTF")
     exit()
 
 # If either the annotation file or annotation type is given without the other,
@@ -158,7 +158,6 @@ if(args.validate and not args.libs):
     print("At least one library must be given to perfor the validate")
     exit()
 
-exit()
 
 # genomeFeature must be an integer
 args.genomeFeature = int(args.genomeFeature)
@@ -1712,7 +1711,7 @@ def validatedTargetsFinder(PAGeDict):
                 toAppend.append(str(windowSum))
                 # Add ratio of abundance of cleavage site to sum within 5 bp 
                 # of the cleavage site in each direction
-                toAppend.append(str("%.3" % float(int(cleavageSite[0])/windowSum)))
+                toAppend.append(str("%.3f" % float(int(cleavageSite[0])/windowSum)))
                 # Add category at cleavage site
                 toAppend.append(str(categoryScore))
                 # Append the p-value to the toAppend list
@@ -2361,11 +2360,11 @@ def main():
     if args.generateFasta:
         chromoDict                      = genomeReader(args.genomeFile)
         # If the annotatyion type is a GFF file, run the GFF parser
-        if(args.annotype == 'gff'):
-            genome_info,genome_info_inter = gffParser(args.gffFile)
+        if(args.annoType == 'GFF'):
+            genome_info,genome_info_inter = gffParser(args.annoFile)
         # If the annotatyion type is a GTF file, run the GTF parser
-        elif(args.annotype == 'gtf'):
-            genome_info,genome_info_inter = gtfParser(args.gffFile) 
+        elif(args.annoType == 'GTF'):
+            genome_info,genome_info_inter = gtfParser(args.annoFile) 
         coords                          = extractFeatures(args.genomeFile,chromoDict,genome_info,genome_info_inter) ## Extracts Coords from GFF3
         fastaOut,fastaList              = getFASTA1(args.genomeFile,coords,chromoDict) ##Creates FASTA file
         unambiguousBaseCounter(fastaOut, args.minTagLen)
@@ -2706,8 +2705,8 @@ if __name__ == '__main__':
 #### As these give error in bowtie2 while making index. Also to capture 'N' or 'n's all seqeunces are modified to upper case
 
 ## v1.19 - v1.20
-## Added annoType annoFile argument in place of gffFile to allow for GTF files and adjusted corresponding argument requirements
-## Changed PARE reads/window abundance to only display up 3 decimal places
+## Added annoType annoFile argument in place of gffFile to allow for GTF files and adjusted corresponding argument requirements -RH
+## Changed PARE reads/window abundance to only display up 3 decimal places -RH
 
 ## v1.20 - v1.21[planned]
 ## Optimization in Reza's part to improve speed
