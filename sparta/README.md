@@ -10,7 +10,7 @@ sPARTA begins with a built-in parallelized target prediction module for plant
 miRNAs called</body></html> `miRferno`. <html><body>sPARTA as a whole utilizes multi-core servers to
 achieve two-dimensional parallelization in order to maintain a low memory
 footprint, imperative to achieve a full genome analysis. 
-<h2><b>Dependencies</b></h2>
+<h3><b>Dependencies</b></h3>
 <b>sPARTA</b> requires bowtie2 in the PATH variable of the user account executing sPARTA<br>
 </body>
 </html>
@@ -21,7 +21,7 @@ sPARTA requires the following python3 functions to perform properly:<br></body><
 `scipy` - <html><body>http://www.scipy.org/<br>
 <br>
 These may easily be installed using (Python) </body></html>`PIP`. <html><body>Intructions to install</body></html>`PIP` -<html><body> https://pip.pypa.io/en/stable/installing.html<br>
-<h2><b>Note</b></h2>
+<h3><b>Note</b></h3>
 </body>
 </html>
 **1**. In case your libraries needs pre-processing i.e. adapter removal and trimming, use pre-processing script here: [https://github.com/atulkakrana/helper.github](https://github.com/atulkakrana/helper.github)
@@ -36,13 +36,13 @@ Files with such names are deleted sometimes while cleanup operation
 **4**.All the input files 1) </body></html>`miRNAs` 2)`FASTA` file for genome or transcripts and 3) `degradome/PARE` in tag-count format should be in same directory, including sPARTA script
 <html>
 </body>
-<h2><b>Execution</b></h2>
+<h3><b>Execution</b></h3>
 <p>There are command line arguments that are to be used by sPARTA for proper
 execution. For the first execution, all steps must be performed, but
 once this has been completed, provided the miRNAs and genome are the same,
 the entire analysis will not need to be repeated.  <a href="https://github.com/sdeepti/atulChange/blob/master/README.md#examples">Examples</a> of such cases
 may be seen below.</p>
-<h2><b>Arguments</b></h2><br>
+<h3><b>Arguments</b></h3><br>
 <table>
 <tr>
 <td>-annoFile</td>        
@@ -101,11 +101,11 @@ mapping</td></tr>
          category of PARE read.</td></tr>
 </table>
 <br>
-<h2><b>Genome and Annotation Data</b></h2>
+<h3><b>Genome and Annotation Data</b></h3>
 Both the </body></html>`GFF3` file and corresponding genome `FASTA` <html><body>file can be downloaded from
 Phytozome [http://www.phytozome.net/]<br>
 
-<h2><b>Examples</b></h2>
+<h3><b>Examples</b></h3>
 </body>
 </html>
 **1**. Execution on new genome/entirely new dataset
@@ -144,7 +144,7 @@ python3 sPARTA.py -featureFile <featureFile.fa> -genomeFeature <0/1> -miRNAFile 
 ```
 <html>
 <body>
-<h2><b>Output</b></h2>
+<h3><b>Output</b></h3>
 </body>
 </html>
 1.PARE validation results for each library can be found in `output` folder under its corresponding library name. The `output` folder also contains a combined result file `AllLibValidatedUniq.csv` from all the libraries.
@@ -165,11 +165,11 @@ A successful run will create a new subfolder "revMapped" inside the "predicted" 
 
 <html>
 <body>
-<h2>Publications</h2>
+<h3>Publications</h3>
 Kakrana, A., Hammond, R., Patel, P., Nakano, M. & Meyers, B. C. sPARTA: a parallelized pipeline for integrated analysis of plant miRNA and cleaved mRNA data sets, including new miRNA target-identification software. Nucleic Acids Res. gku693– (2014).  doi:10.1093/nar/gku693 <a href="http://www.ncbi.nlm.nih.gov/pubmed/25120269">[Link]</a><br><br>
 
 Arikit, S., Xia, R., Kakrana, A., Huang, K., Zhai, J., Yan, Z., … Meyers, B. C. (2014). An Atlas of Soybean Small RNAs Identifies Phased siRNAs from Hundreds of Coding Genes. The Plant Cell. http://doi.org/10.1105/tpc.114.131847 <a href="http://www.ncbi.nlm.nih.gov/pubmed/25465409">[Link]</a>
-<h2><b>Contact</b></h2>
+<h3><b>Contact</b></h3>
 Atul Kakrana<br>
 kakrana@udel.edu<br>
 Reza Hammond<br>
