@@ -1,5 +1,5 @@
 ## sPARTA: small RNA-PARE Target Analyzer public version 
-## Updated: version-1.18 9/18/2016
+## Updated: version-1.19 9/18/2016
 ## Property of Meyers Lab at University of Delaware
 ## Author: kakrana@udel.edu
 ## Author: rkweku@udel.edu
@@ -153,13 +153,13 @@ def checkLibs():
 
     print("\n++Checking for required libraries and components ######")
     goSignal    = 1 
-    isRpy2      = importlib.find_loader('rpy2')
-    if isRpy2 is None:
-        print("--rpy2   : missing")
-        goSignal    = 0
-    else:
-        print("--rpy2   : found")
-        pass
+    # isRpy2      = importlib.find_loader('rpy2')
+    # if isRpy2 is None:
+    #     print("--rpy2   : missing")
+    #     goSignal    = 0
+    # else:
+    #     print("--rpy2   : found")
+    #     pass
 
     isNumpy     = importlib.find_loader('numpy')
     if isNumpy is None:
@@ -207,15 +207,20 @@ def genomeReader(genomeFile):
     Reads Genome FASTA file
     '''
 
-    print("Fn: genomeReader\n")
-    if os.path.exists("./%s" % genomeFile):
-        fh_in = open(genomeFile, 'r')
-    else:
+    print("\nFn: genomeReader #########################################")
+    
+    #### Check for genome file
+    if not os.path.isfile(genomeFile):
+        print("'%s' genome file not found at:%s" % (genomeFile,os.getcwd()))
         print("\nPlease check the genomeFile - Is it in sPARTA directory? Did you input wrong name?")
         print("If it exists and you input correct name then it could have been deleted while last cleanup operation - Sorry!!")
         print("If deleted then please rename genomeFile (without any integers in name) and re-copy in sPARTA folder\n")
         print("Script will exit for now\n")
         sys.exit()
+    else:
+        fh_in = open(genomeFile, 'r')
+        pass
+
     print("Caching genome fasta")
     genomeFile = fh_in.read()
     genomeList = genomeFile.split('>')[1:] 
@@ -229,12 +234,150 @@ def genomeReader(genomeFile):
     print("Genome dict prepared for %s chromosome/scaffolds" % (len(chromoDict)))
     return chromoDict
 
-def extractFeatures(genomeFile,gffFile,chromoDict):
+def gtfParser(gtfFile):
 
+    '''This function parses Trinity and Rocket GTF file
+    to give a trascript entry and entry for all exons - Basically this is the parser for gffread geenrated files'''
+    print("\nFn: gtfParser ############################################")
+
+    #### Check if file exists
+    if not os.path.isfile(gtfFile):
+        print("'%s' file not found at:%s" % (gtfFile,os.getcwd()))
+        print("Please check if GTF file exists in your directory\n")
+        sys.exit()
+    else:
+        pass
+    
+    ### Read GTF ####
+    mode = 3 ## This is the mode from real module that corresponts to TopHat/Cufflink GTF files
+    with open(gtfFile) as fh_in:
+        lines = (line.rstrip() for line in fh_in) 
+        gtfRead = list(line for line in lines if line) # Non-blank lines in a list
+    fh_in.close()
+
+    ### PARSE GTF file #####
+    gtfList     = [] ## List to hold parsed GTF entries
+    tempName    = [] ## Stores current trans name
+    tempCoords  = [] ## Temp coords
+    
+    for i in gtfRead:
+        # print(i)
+        ent = i.split("\t")
+        # print("\nEnt",ent)
+        gScore  = ent[5] ## Score provided for mapping accuracy in Trinity GTF from GMAP 0 to 100
+        gtype   = ent[2]
+        if gtype == "exon": #### <exon/CDS> Use CDS to get similar number of transcripts as in GFF3 file - but CDS doesn't include UTRs so exon is choosen to represent protein-coding genes
+            # print("\nExon:",ent)
+            gchr    = ent[0]
+            gstart  = int(ent[3])
+            gend    = int(ent[4])
+            gstrand = ent[6].translate(str.maketrans("+-","wc"))
+            info    = ent[8].strip("\n").split(";")
+            # print(info)
+            gid     = info[1].split()[1].replace('"','') ## Gene ID
+            # print('-',gid,gchr,gstart,gend,gstrand)
+            
+            ## Parse the info and add the exon entries  #################
+            #############################################################
+
+            # if mode == 2 or (mode == 4 and len(info)==4): ## This is  trinity GTF info
+            #     ## Protein coding gene with a version number
+            #     tid         = info[0].split()[1].replace('"','').split(".")[0] ## Transcript ID
+            #     gid         = info[2].split()[1].replace('"','').rpartition("_")[0] ## Gene ID
+            #     # aflag   = 'T' ## Trinity
+            #     print('-',gid,gchr,gstart,gend,gstrand,geneType)
+            #     gtfList.append((gid,tid,gchr,gstart,gend,gstrand,geneType))
+
+            # elif mode == 3 or (mode ==4 and len(info) >= 7): ## This is rocket GTF info, with and w/o p_id "P1" in the end
+            #     tid         = info[0].split()[1].replace('"','') ## Transcript ID
+            #     gid         = info[1].split()[1].replace('"','') ## Gene ID
+            #     # aflag   = 'R' ## Rocket
+            #     geneType    = 'gene'
+            #     # print('-',gid,gchr,gstart,gend,gstrand,geneType)
+            #     gtfList.append((gchr,gstrand,gid,gstart,gend,geneType)) ###@@@@@@@@@@@@@@@@@@@ CHECK @@@@@@@@@@@@@@@@@@
+
+            # else:
+            #     print("-This entry has more than expected info")
+            #     print("-Info block",info)
+            #     print("-Info block len:%s" % len(info))
+            #     print("-Debug!!")
+            #     sys.exit()
+
+            ## Check trascript change #########
+            ###################################
+
+            ## Check if transcript entry needs to be added i.e. all the exons from previous one has been captured
+            if not tempName or tempName[0] == gid:
+                tempName.append(gid)
+                tempCoords.append(gstart)
+                tempCoords.append(gend)
+                tempStrand          = gstrand   ## Strand of last transcript
+                tempgid             = gid       ## Gene name of last transcript
+                tempChr             = gchr      ## Chr of last transcript
+            
+            elif tempName[0] != gid: ## Check if the new transcript is being read. if yes then add transcript entry for old exons using tempName and tempCoords
+                # print("-New transcript read - summarizing transcript entry for earlier one")
+                gstartProcess       = min(tempCoords)
+                gendProcess         = max(tempCoords)
+                gidProcess          = tempName[0]
+                geneType            = 'gene'
+                # print('-',tempChr,tempStrand,gidProcess,gstartProcess,gendProcess,geneType)
+                gtfList.append((tempChr,tempStrand,gidProcess,int(gstartProcess),int(gendProcess),geneType)) ### @@@@@@@@@@@@@@@@@ CHECK @@@@@@@@@@@@@@@@@@@@@@ gene start and gene end
+                
+                ## Empty lists and fill with current exon from new transcript
+                tempName            = []            ## Empty gene names
+                tempCoords          = []            ## Empty exon coords from earlier gene
+                tempName.append(gid)        ## Add new gene name 
+                tempCoords.append(gstart)   ## Add exons coords for new gene
+                tempCoords.append(gend)     ## Add exons coords for new gene
+                tempStrand          = gstrand       ## Strand of last transcript
+                tempgid             = gid           ## Gene name of last transcript
+                tempChr             = gchr          ## Chr of last transcript
+                # sys.exit()
+            else:
+                print("-Unforseen scenario encountered")
+                print("There seems to be a problem with GTF file - Please check integrity of your GTF file")
+                sys.exit()
+
+        else:
+            # print("We don't need this info for current script") ## CDS or GENE
+            pass
+
+    if len(gtfList) == 0:
+        print("Check if the feature used for extraction i.e. gene, transcript, exon is correct")
+        print("Debug!!")
+        sys.exit()
+    else:
+        # print("Total entries fetched from GTF file:%s" % (str(len(gtfList))))
+        # print("First 10 entries of gtfList list: %s" % (gtfList[:10]))
+        pass
+
+    ### Sort entries to prepare for extraction
+    genome_info = list(gtfList)
+    # genome_info_sorted = sorted(gtfList, key=operator.itemgetter(0,1,3)) ## CHR_ID, strand and start 
+    genome_info.sort(key=lambda k:(k[0],k[1],k[3])) #
+    genome_info_inter = genome_info
+    print("Entries in genome_info:%s" % (len(genome_info)))
+    print("First 10 entries of genome_info list: %s" % (genome_info[:10]))
+    # sys.exit()
+    
+    return genome_info,genome_info_inter
+
+def gffParser(gffFile):
     '''
-    Extract coordinates from GFF file - New proposed name annoReader
+    Extract coordinates from GFF file. tested with GFF3 file from phytozome
     '''
-    print("Fn: extractFeatures\n\n")
+    print("\nFn: gffParser ############################################")
+    
+    #### Check for GFF file
+    if not os.path.isfile(gffFile):
+        print("'%s' file not found at:%s" % (gffFile,os.getcwd()))
+        print("Please check if GFF file exists in your directory\n")
+        sys.exit()
+    else:
+        pass
+
+    #### Parse
     fh_in       = open(gffFile,'r')
     fh_in.readline() ## GFF version 
     gffRead     = fh_in.readlines()
@@ -256,9 +399,21 @@ def extractFeatures(genomeFile,gffFile,chromoDict):
                 genome_info.append((chrID,strand,geneName,int(ent[3]),int(ent[4]),geneType))
         
     #genome_info_inter = genome_info ##
-    genome_info_sorted = sorted(genome_info, key=operator.itemgetter(0,1,3)) ## CHR_ID, strand and start 
+    # genome_info_sorted = sorted(genome_info, key=operator.itemgetter(0,1,3)) ## CHR_ID, strand and start 
     genome_info.sort(key=lambda k:(k[0],k[1],k[3])) #
     genome_info_inter = genome_info
+    print("Entries in genome_info:%s" % (len(genome_info)))
+    # print("First 10 entries of genome_info list: %s" % (genome_info[:10]))
+    # sys.exit()
+
+    fh_in.close()
+    return genome_info,genome_info_inter
+
+def extractFeatures(genomeFile,chromoDict,genome_info,genome_info_inter):
+    '''
+    extract coordinates of genes and intergenic regions 
+    '''
+    print("Fn: extractFeatures ######################################\n")
     alist = []##
     for i in range(0, int(len(genome_info))+1): #
         #print (i)
@@ -392,9 +547,9 @@ def extractFeatures(genomeFile,gffFile,chromoDict):
                     coords_out.write('%s,%s,%s,%s,%s,%s\n' % (ent[0:]))
     
     print ("Number of coords in 'coords' list: %s" % (len(coords)))
+
+
     coords_out.close()    
-    fh_in.close()
-    
     return coords
 
 def getFASTA1(genomeFile,coords,chromoDict):
@@ -418,7 +573,7 @@ def getFASTA1(genomeFile,coords,chromoDict):
         # print('\nGene:%s | Start:%s End:%s Chr:%s Strand:%s' % (gene,start,end,chr_id,strand))
         
         if tuple(i[0:2]) not in chromo_mem: 
-            chromo_mem.append(tuple(i[0:2]))   ##
+            chromo_mem.append(tuple(i[0:2]))   ## First entry of chromosome
             print("\n++Reading chromosome:%s and strand:'%s' ################" % (i[0],i[1]) )
             # print('--Gene:%s | Start:%s End:%s Chr:%s Strand:%s' % (gene,start,end,chr_id,strand))
             print("--Fetching gene:%s" % (gene))
@@ -427,46 +582,52 @@ def getFASTA1(genomeFile,coords,chromoDict):
             #print('Chromosome:',chromo)
             
             if end == '-':
-                gene_seq = chromo[start:] ## Usually first entry (recorded in this loop) will be from chr-start to gene-start, but if this coord/region is few nts (<20nt) 
+                gene_seq = chromo[start:].translate(str.maketrans("autgcn","AUTGCN")) ## Usually first entry (recorded in this loop) will be from chr-start to gene-start, but if this coord/region is few nts (<20nt) 
                                           ## it is skipped, and you will encouter directly the gene-end to chr-end region, and you need this loop - Very rare case
             else:
-                gene_seq = chromo[start:end]
-            #print(gene_seq)
-            if strand == 'c':
-                gene_seq_rev = gene_seq[::-1].translate(str.maketrans("TAGC","ATCG"))
-                fh_out.write('>%s\n%s\n' % (gene,gene_seq_rev))
-                fastaList.append((gene,gene_seq_rev))
-            else:
-                fh_out.write('>%s\n%s\n' % (gene,gene_seq))
-                fastaList.append((gene,gene_seq))
+                gene_seq = chromo[start:end].translate(str.maketrans("autgcn","AUTGCN"))
+
+            ncount = gene_seq.count('N') ### Check of 'Ns' that cause bowtie to hang for a very long time. This is observed in chickpea genome.
+            if ncount < len(gene_seq):
+                if strand == 'c':
+                    gene_seq_rev = gene_seq[::-1].translate(str.maketrans("TAGC","ATCG"))
+                    fh_out.write('>%s\n%s\n' % (gene,gene_seq_rev))
+                    fastaList.append((gene,gene_seq_rev))
+                else:
+                    fh_out.write('>%s\n%s\n' % (gene,gene_seq))
+                    fastaList.append((gene,gene_seq))
     
-        elif end == '-': ##
+        elif end == '-': 
             # print('--Gene:%s | Start:%s End:%s Chr:%s Strand:%s' % (gene,start,end,chr_id,strand))
             print("--Fetching gene:%s" % (gene))
-            gene_seq = chromo[start:]##
-            #print(gene_seq)
-            if strand == 'c':
-                gene_seq_rev = gene_seq[::-1].translate(str.maketrans("TAGC","ATCG"))
-                fh_out.write('>%s\n%s\n' % (gene,gene_seq_rev))
-                fastaList.append((gene,gene_seq_rev))
-                
-            else:
-                fh_out.write('>%s\n%s\n' % (gene,gene_seq))
-                fastaList.append((gene,gene_seq))
+            gene_seq = chromo[start:].translate(str.maketrans("autgcn","AUTGCN")) ##
+            
+            ncount = gene_seq.count('N') ### Check of 'Ns' that cause bowtie to hang for a very long time. This is observed in chickpea genome.
+            if ncount < len(gene_seq):
+                if strand == 'c':
+                    gene_seq_rev = gene_seq[::-1].translate(str.maketrans("TAGC","ATCG"))
+                    fh_out.write('>%s\n%s\n' % (gene,gene_seq_rev))
+                    fastaList.append((gene,gene_seq_rev))
+                    
+                else:
+                    fh_out.write('>%s\n%s\n' % (gene,gene_seq))
+                    fastaList.append((gene,gene_seq))
             
         else:
             # print('--Gene:%s | Start:%s End:%s Chr:%s Strand:%s' % (gene,start,end,chr_id,strand))
             print("--Fetching gene:%s" % (gene))
-            gene_seq = chromo[start:end]##
-            #print(gene_seq)
-            if strand == 'c':
-                gene_seq_rev = gene_seq[::-1].translate(str.maketrans("TAGC","ATCG"))
-                fh_out.write('>%s\n%s\n' % (gene,gene_seq_rev))
-                fastaList.append((gene,gene_seq_rev))
-                
-            else:
-                fh_out.write('>%s\n%s\n' % (gene,gene_seq))
-                fastaList.append((gene,gene_seq))
+            gene_seq = chromo[start:end].translate(str.maketrans("autgcn","AUTGCN")) ##
+            
+            ncount = gene_seq.count('N') ### Check of 'Ns' that cause bowtie to hang for a very long time. This is observed in chickpea genome.
+            if ncount < len(gene_seq):
+                if strand == 'c':
+                    gene_seq_rev = gene_seq[::-1].translate(str.maketrans("TAGC","ATCG"))
+                    fh_out.write('>%s\n%s\n' % (gene,gene_seq_rev))
+                    fastaList.append((gene,gene_seq_rev))
+                    
+                else:
+                    fh_out.write('>%s\n%s\n' % (gene,gene_seq))
+                    fastaList.append((gene,gene_seq))
 
     time.sleep(10)
     fh_out.close()
@@ -623,6 +784,20 @@ def fragFASTA(FASTA,fastaList):
     return fls
 
 def miRinput():
+    '''
+    Cleans miRNA fasta file and processes for target prediction
+    '''
+
+    print("\nFn: miRNAProcessor#########################################")
+
+    #### Check for file
+    if not os.path.isfile(args.miRNAFile):
+        print("'%s' file not found at:%s" % (args.miRNAFile,os.getcwd()))
+        print("Please check if miRNA fasta file exists in your directory\n")
+        sys.exit()
+    else:
+        pass    
+
     mirL                = [] ## List to store miRNAs
     outfile             = ('%s_clean_revcomp.fa' % (args.miRNAFile))
     miRNA_file_clean    = cleanHeader(args.miRNAFile,outfile)#
@@ -1380,9 +1555,9 @@ def pValueCalculator(target, targetFinderList, proportion):
 
     """
 
-    r = robjects.r ## Use scipy/numpy for this http://docs.scipy.org/doc/numpy/reference/generated/numpy.random.binomial.html
-    miRNAName = target[0]
-    score = target[5]
+    # r = robjects.r ## Use scipy/numpy for this http://docs.scipy.org/doc/numpy/reference/generated/numpy.random.binomial.html
+    miRNAName   = target[0]
+    score       = target[5]
 
     #
     if(float(score) % 1):
@@ -1390,7 +1565,8 @@ def pValueCalculator(target, targetFinderList, proportion):
     else:
         n = sum(x.count(miRNAName) for x in targetFinderList if float(x[5]) ==
             float(score))
-    pval = 1-(r.pbinom(0,n,proportion))[0]
+    # pval = 1-(r.pbinom(0,n,proportion))[0]
+    pval = 1-(scipy.stats.binom.pmf([0],n,proportion)[0])
     return pval
 
 def validatedTargetsFinder(PAGeDict):
@@ -2154,20 +2330,22 @@ def main():
 
     ## Pre-run check and imports ######################
     checkLibs()
-    global rpy2,numpy,stats,importr,FloatVector,robjects
-    import rpy2,numpy
+    global rpy2,numpy,stats,scipy
+    import rpy2,numpy,scipy
     import rpy2.robjects as robjects
     from scipy import stats
-    from rpy2.robjects.packages import importr
-    from rpy2.robjects.vectors import FloatVector
-    RStats = importr('stats')
+    # from rpy2.robjects.packages import importr
+    # from rpy2.robjects.vectors import FloatVector
+    # RStats = importr('stats')
     ###################################################
 
 
     if args.generateFasta:
-        chromoDict  = genomeReader(args.genomeFile)
-        coords      = extractFeatures(args.genomeFile,args.gffFile,chromoDict) ## Extracts Coords from GFF3
-        fastaOut,fastaList    = getFASTA1(args.genomeFile,coords,chromoDict) ##Creates FASTA file
+        chromoDict                      = genomeReader(args.genomeFile)
+        genome_info,genome_info_inter   = gffParser(args.gffFile)
+        # genome_info,genome_info_inter   = gtfParser(args.gffFile) 
+        coords                          = extractFeatures(args.genomeFile,chromoDict,genome_info,genome_info_inter) ## Extracts Coords from GFF3
+        fastaOut,fastaList              = getFASTA1(args.genomeFile,coords,chromoDict) ##Creates FASTA file
         unambiguousBaseCounter(fastaOut, args.minTagLen)
         print('This is the extracted file: %s' % (fastaOut))
     # 
@@ -2492,17 +2670,29 @@ if __name__ == '__main__':
 ## Added a new function to check for libraries before running sPARTA
 ## Added reverse mapping as default, done only when genomeFile is used to extract genomeFeature, noto in case of featureFile
 
-## v1.7 -> v1.8
+## v1.17 -> v1.18
 ## Removed pyfasta requirement
 ## Fixed bug with revrsemapping for analyses with --featureFile, since it's not possible, reversemapping turned off
 
-## v1.18 -> v1.19 [Pending]
+## v1.18 -> v1.19
+## Removed rpy2 requirement
+## Add GTF support, and new switch -annotype GTF/GFF3 -annofile FILENAME
+#### Features extracted from GTF can have coordinates differet from GFF3 file, because in GTF we use exons to compute gene coordinates
+#### This can lead to difference in number of validated targets (as some features were missing from GTF file) and difference in name of
+#### intergenic region (due to absence of a few features the up and dpwn correspond to other gene)
+## Added functionality to count the 'N's in fetched seqeunce, before wriring and write those seqeunces which are not purely 'N'. 
+#### As these give error in bowtie2 while making index. Also to capture 'N' or 'n's all seqeunces are modified to upper case
+
+## v1.19 - v1.20[planned]
+## Optimization in Reza's part to improve speed
+## Add chart function
+
+## FUTURE DEVELOPMENT [Pending]
 ## Added GTF comaptibility, to make it comaptible with cufflinks experiments
 ## Remove rpy2 depenency
 ## Fine tune paralleization in validation part
 ## Add degradome plots
+## Add funtionality to include probabilty of accesibilty and RNA-RNA duplex formation, combine this -value with PARE based p-value
 ## fasta file is read once to fastaList. What does the 'unambiguousBaseCounter' function does with FASTA file? Can we use the fastaList to avoid file reading again?
 ## Fragmented file names changed with extra 'frag' how does it affects Reza functions?
 ## Which switches to use to not perform reverse mapping if feature file is supplied? Rename final uniq file to include 'revammpped' consitant with library specific files. 
-
-

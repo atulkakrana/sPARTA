@@ -15,8 +15,6 @@ bowtie2 may be downloaded here http://bowtie-bio.sourceforge.net/bowtie2/index.s
 
 sPARTA requires the following python3 functions to perform properly:
 numpy - http://www.numpy.org/
-pyfasta - https://pypi.python.org/pypi/pyfasta/
-rpy2 - http://rpy.sourceforge.net/
 scipy - http://www.scipy.org/
 
 These may easily be installed using (Python) PIP. Intructions to install PIP - https://pip.pypa.io/en/stable/installing.html
@@ -41,8 +39,6 @@ execution. For the first execution, all steps must be performed, but
 once this has been completed, provided the miRNAs and genome are the same,
 the entire analysis will not need to be repeated. Examples of such cases
 may be seen below.
-
-
 
 ======= Arguments ========
 gffFile         GFF3 file for the species being analyzed corresponding

@@ -18,7 +18,6 @@ footprint, imperative to achieve a full genome analysis.
 
 sPARTA requires the following python3 functions to perform properly:<br></body></html>
 `numpy` - <html><body>http://www.numpy.org/<br></body></html>
-`rpy2` - <html><body>http://rpy.sourceforge.net/<br></body></html>
 `scipy` - <html><body>http://www.scipy.org/<br>
 <br>
 These may easily be installed using (Python) </body></html>`PIP`. <html><body>Intructions to install</body></html>`PIP` -<html><body> https://pip.pypa.io/en/stable/installing.html<br>
@@ -105,35 +104,35 @@ Phytozome [http://www.phytozome.net/]<br>
 <h2><b>Examples</b></h2>
 </body>
 </html>
-1.Execution on new genome/entirely new dataset
+**1**. Execution on new genome/entirely new dataset
 This execution should be performed any time a new genome file (along with corresponding `GFF` file) is being analyzed:
 ```
 python3 sPARTA.py -genomeFile <genomeFile.fa> -gffFile <GFF3file> -genomeFeature <0/1> -miRNAFile <miRNAFile.fa> -libs <Lib_A.txt Lib_B.txt> -tarPred -tarScore --tag2FASTA --map2DD --validate
 ```
-OR
+**OR**
 
 a user provided feature set (FASTA file with sequences of interest) is being analyzed:
 
 ```
 python3 sPARTA.py -featureFile <featureFile.fa> -genomeFeature <0/1> -miRNAFile <miRNAFile.fa> -libs <Lib_A.txt Lib_B.txt> -tarPred -tarScore --tag2FASTA --map2DD --validate
 ```
-2.Execution on genome in which genome has already been processed
+**2**. Execution on genome in which genome has already been processed
 This execution should be performed if a genome file has been processed previously but the miRNAs for which targets need to be predicted are new:
 ```
 python3 sPARTA.py -genomeFeature <0/1> -miRNAFile <miRNAFile.fa> -libs <Lib_A.txt Lib_B.txt> -tarPred -tarScore --tag2FASTA --map2DD --validate
 ```
-3.Execution on data in which genome and miRNA files have been previously processed
+**3**. Execution on data in which genome and miRNA files have been previously processed
 This execution should be performed if targets for a genome file have already been predicted using a miRNA file, but new PARE libraries need to be used for validation of earlier predicted targets:
 ```
 python3 sPARTA.py -genomeFeature <0/1> -libs <Lib_C.txt Lib_D.txt> --map2DD --validate
 ```
 
-4.Execution of 'miRferno', just for target prediction
+**4**. Execution of 'miRferno', just for target prediction
 This execution should be performed in case only predicted targets are required or PARE libraries are not available:
 ```
 python3 sPARTA.py -genomeFile <genomeFile.fa> -gffFile <GFF3file> -genomeFeature <0/1> -miRNAFile <miRNAFile.fa> -tarPred -tarScore
 ```
-OR
+**OR**
 
 a user provided feature set (FASTA file with sequences of interest) is being analyzed:
 ```
