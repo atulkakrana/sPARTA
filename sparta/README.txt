@@ -45,7 +45,7 @@ annoFile        GFF3 or GTF file for the species being analyzed corresponding
 ...             to the genome assembly being used. Recommended file
 ...				extension - '.gff3' or '.gtf'
 
-annoType 		The annotation file format. Currently GFF3 and GTF is
+annoType 		The annotation file format. Currently GFF and GTF is
 ...				supported. This option is used with and corresponds to
 ...				the annoFile option
 
@@ -92,7 +92,7 @@ Phytozome [http://www.phytozome.net/]
 1. Execution on new genome/entirely new dataset
 This execution should be performed any time a new genome file (along with corresponding GFF3 or GTF file) is being analyzed:
 
-python3 sPARTA.py -genomeFile <genomeFile.fa> -annoType <GTF/GFF3> -annoFile <annotationfile> -genomeFeature <0/1> -miRNAFile <miRNAFile.fa> -libs <Lib_A.txt Lib_B.txt> -tarPred -tarScore --tag2FASTA --map2DD --validate
+python3 sPARTA.py -genomeFile <genomeFile.fa> -annoType <GTF/GFF> -annoFile <annotationfile> -genomeFeature <0/1> -miRNAFile <miRNAFile.fa> -libs <Lib_A.txt Lib_B.txt> -tarPred -tarScore --tag2FASTA --map2DD --validate
 
 OR
 
@@ -112,7 +112,7 @@ python3 sPARTA.py -genomeFeature <0/1> -libs <Lib_C.txt Lib_D.txt> --map2DD --va
 
 4. Execution of 'miRferno', just for target prediction
 This execution should be performed in case only predicted targets are required or PARE libraries are not available:
-python3 sPARTA.py -genomeFile <genomeFile.fa> -annoType <GTF/GFF3> -annoFile <annotationfile> -genomeFeature <0/1> -miRNAFile <miRNAFile.fa> -tarPred -tarScore
+python3 sPARTA.py -genomeFile <genomeFile.fa> -annoType <GTF/GFF> -annoFile <annotationfile> -genomeFeature <0/1> -miRNAFile <miRNAFile.fa> -tarPred -tarScore
 
 OR
 
