@@ -15,8 +15,10 @@ from operator import itemgetter
 
 #### USER SETTINGS ################################
 parser = argparse.ArgumentParser()
-parser.add_argument('-gffFile',  default='', help='GFF file for the species '\
-    'being analyzed corresponding to the genome assembly being used')
+parser.add_argument('-annoType',  default='', help='GFF if the annotation file'\
+    'file is a GFF file. GTF if the annotation file is a GTF file')
+parser.add_argument('-annoFile',  default='', help='GFF/GTF file for the '\
+    'species being analyzed corresponding to the genome assembly being used')
 parser.add_argument('-genomeFile', default='', help='Genome file in FASTA '\
     'format')
 parser.add_argument('-featureFile', default='', help='Feature file in FASTA '\
@@ -75,12 +77,26 @@ parser.add_argument('--cat4Show', action='store_false', default=True,
 
 args = parser.parse_args()
 
-## Various checks for dependencies within command line arguments
-# If either gff or genome file is given without the other and featureFile
-# is not given, exit.
-if(((args.gffFile and not args.genomeFile) or (args.genomeFile and not
-        args.gffFile)) and (not args.featureFile)):
-    print("gffFile and genomeFile must both be given to create feature set")
+### Various checks for dependencies within command line arguments
+
+# If either annotation or genome file is given without the other and
+# featureFile is not given, exit.
+if(((args.annoFile and not args.genomeFile) or (args.genomeFile and not
+        args.annoFile)) and (not args.featureFile)):
+    print("annoFile and genomeFile must both be given to create feature set")
+    exit()
+
+# If annoType is provided and not GFF or GTF, report the error and exit
+if(args.annoType and args.annoType != 'GFF' and args.annoType != 'GTF'):
+    print("annoType must be either GFF or GTF")
+    exit()
+
+# If either the annotation file or annotation type is given without the other,
+# exit.
+if((args.annoType and not args.annoFile) or (args.annoFile and not
+        args.annoType)):
+    print("annoType and annoFile must both be give to parse either the GFF "\
+    "or GTF file.")
     exit()
 
 # If the user input both a genome and feature file, exit as both cannot be
@@ -89,25 +105,25 @@ if(args.genomeFile and args.featureFile):
     print("genomeFile and featureFile cannot both be supplied for execution")
     exit()
 
-# If gffFile and genomeFile are given turn on extraction, frag and index steps
+# If annoFile and genomeFile are given turn on extraction, frag and index steps
 # must be set on
-if(args.gffFile and args.genomeFile):
+if(args.annoFile and args.genomeFile):
     args.generateFasta = True
     args.fileFrag = True
     args.indexStep = True
 
 # If featureFile is given, frag and index steps must be set on
 if(args.featureFile):
-    # If featureFile is given and gffFile is given, give a warning letting
-    # user know the gffFile will be ignored and the input fasta file may
+    # If featureFile is given and annoFile is given, give a warning letting
+    # user know the annoFile will be ignored and the input fasta file may
     # have been intended as a genomeFile
-    if(args.gffFile):
-        print("Warning: You have input a gffFile but input a FASTA file as "\
+    if(args.annoFile):
+        print("Warning: You have input a annoFile but input a FASTA file as "\
         "the featureFile. If you intended for this to be used in conjunction "\
-        "with the gff file to create a feature file, please press 'ctrl+c' "\
-        "to cancel the execution and rerun with the FASTA file under the "\
-        "argument 'genomeFile'. If this is in fact the feature file, allow "\
-        "sPARTA to continue its execution.")
+        "with the annotation file to create a feature file, please press "\
+        "'ctrl+c' to cancel the execution and rerun with the FASTA file "\
+        "under the argument 'genomeFile'. If this is in fact the feature "\
+        "file, allow sPARTA to continue its execution.")
         time.sleep(10)
     args.fileFrag = True
     args.indexStep = True
@@ -141,6 +157,8 @@ if(args.tag2FASTA and not args.libs):
 if(args.validate and not args.libs):
     print("At least one library must be given to perfor the validate")
     exit()
+
+exit()
 
 # genomeFeature must be an integer
 args.genomeFeature = int(args.genomeFeature)
@@ -563,7 +581,7 @@ def getFASTA1(genomeFile,coords,chromoDict):
 
     fastaList = [] ## Stores name and seq for fastFile
     chromo_mem = []
-    for i in coords: ## Coords is list from gff parser
+    for i in coords: ## Coords is list from annotation parser
         #print (i)
         chr_id  = i[0]
         strand  = i[1]
@@ -1694,7 +1712,7 @@ def validatedTargetsFinder(PAGeDict):
                 toAppend.append(str(windowSum))
                 # Add ratio of abundance of cleavage site to sum within 5 bp 
                 # of the cleavage site in each direction
-                toAppend.append(str(float(int(cleavageSite[0])/windowSum)))
+                toAppend.append(str("%.3" % float(int(cleavageSite[0])/windowSum)))
                 # Add category at cleavage site
                 toAppend.append(str(categoryScore))
                 # Append the p-value to the toAppend list
@@ -2247,7 +2265,7 @@ def ReverseMapping():
         else:
             print("Something went wrong with reverse mapping")
             print("Encountered unexpected charater for chromosome strand:%s" % (strand))
-            print("Please check your GFF file, it seems to have unexpected characters for strand")
+            print("Please check your annotation file, it seems to have unexpected characters for strand")
             sys.exit()
     
     print("Entries in watson dict:%s | crick dict:%s" % (len(coord_dict_wat),len(coord_dict_crick)))
@@ -2342,8 +2360,12 @@ def main():
 
     if args.generateFasta:
         chromoDict                      = genomeReader(args.genomeFile)
-        genome_info,genome_info_inter   = gffParser(args.gffFile)
-        # genome_info,genome_info_inter   = gtfParser(args.gffFile) 
+        # If the annotatyion type is a GFF file, run the GFF parser
+        if(args.annotype == 'gff'):
+            genome_info,genome_info_inter = gffParser(args.gffFile)
+        # If the annotatyion type is a GTF file, run the GTF parser
+        elif(args.annotype == 'gtf'):
+            genome_info,genome_info_inter = gtfParser(args.gffFile) 
         coords                          = extractFeatures(args.genomeFile,chromoDict,genome_info,genome_info_inter) ## Extracts Coords from GFF3
         fastaOut,fastaList              = getFASTA1(args.genomeFile,coords,chromoDict) ##Creates FASTA file
         unambiguousBaseCounter(fastaOut, args.minTagLen)
@@ -2383,7 +2405,7 @@ def main():
                     print('\n------ERROR-------')
                     print("The earlier processed genome or feature set belongs to genomeFeature: %s" % (aval))
                     print("Your current genomeFeature input: %s" % (str(args.genomeFeature)))
-                    print("Please input either correct genomeFeature value or re-run the analysis with '-featurefile' or '-genomeFile and -gffFile'")
+                    print("Please input either correct genomeFeature value or re-run the analysis with '-featurefile' or '-genomeFile and -annoFile'")
                     print("\nSystem will exit now")
                     sys.exit(0)
                 else:
@@ -2683,7 +2705,11 @@ if __name__ == '__main__':
 ## Added functionality to count the 'N's in fetched seqeunce, before wriring and write those seqeunces which are not purely 'N'. 
 #### As these give error in bowtie2 while making index. Also to capture 'N' or 'n's all seqeunces are modified to upper case
 
-## v1.19 - v1.20[planned]
+## v1.19 - v1.20
+## Added annoType annoFile argument in place of gffFile to allow for GTF files and adjusted corresponding argument requirements
+## Changed PARE reads/window abundance to only display up 3 decimal places
+
+## v1.20 - v1.21[planned]
 ## Optimization in Reza's part to improve speed
 ## Add chart function
 
