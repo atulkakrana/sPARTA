@@ -1,5 +1,5 @@
 ## sPARTA: small RNA-PARE Target Analyzer public version 
-## Updated: version-1.20 9/30/2016
+## Updated: version-1.21 9/30/2016
 ## Property of Meyers Lab at University of Delaware
 ## Author: kakrana@udel.edu
 ## Author: rkweku@udel.edu
@@ -2708,7 +2708,10 @@ if __name__ == '__main__':
 ## Added annoType annoFile argument in place of gffFile to allow for GTF files and adjusted corresponding argument requirements -RH
 ## Changed PARE reads/window abundance to only display up 3 decimal places -RH
 
-## v1.20 - v1.21[planned]
+## v1.20 -> 1.21
+## Removed the stray rpy2 imports from main
+
+## v1.21 - v1.22[planned]
 ## Optimization in Reza's part to improve speed
 ## Add chart function
 
