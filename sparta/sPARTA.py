@@ -2347,7 +2347,7 @@ def main():
 
     ## Pre-run check and imports ######################
     checkLibs()
-    global rpy2,numpy,stats,scipy
+    global numpy,stats,scipy
     from scipy import stats
     # import rpy2,numpy,scipy
     # import rpy2.robjects as robjects
