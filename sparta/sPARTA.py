@@ -2348,9 +2348,9 @@ def main():
     ## Pre-run check and imports ######################
     checkLibs()
     global rpy2,numpy,stats,scipy
-    import rpy2,numpy,scipy
-    import rpy2.robjects as robjects
     from scipy import stats
+    # import rpy2,numpy,scipy
+    # import rpy2.robjects as robjects
     # from rpy2.robjects.packages import importr
     # from rpy2.robjects.vectors import FloatVector
     # RStats = importr('stats')
