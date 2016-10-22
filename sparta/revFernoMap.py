@@ -11,7 +11,6 @@ import sys,os,re,time,timeit,csv,glob,string,shutil,operator
 import subprocess, multiprocessing
 from multiprocessing import Process, Queue, Pool
 from operator import itemgetter
-import mysql.connector as sql
 
 #########################################################################
 #### USER SETTINGS ######################################################
