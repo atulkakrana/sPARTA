@@ -2349,7 +2349,7 @@ def main():
     checkLibs()
     global numpy,stats,scipy
     from scipy import stats
-    # import rpy2,numpy,scipy
+    import numpy,scipy
     # import rpy2.robjects as robjects
     # from rpy2.robjects.packages import importr
     # from rpy2.robjects.vectors import FloatVector
