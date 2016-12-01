@@ -1,5 +1,5 @@
 ## sPARTA: small RNA-PARE Target Analyzer public version 
-## Updated: version-1.21 9/30/2016
+## Updated: version-1.21 12/01/2016
 ## Property of Meyers Lab at University of Delaware
 ## Author: kakrana@udel.edu
 ## Author: rkweku@udel.edu
@@ -1711,7 +1711,7 @@ def validatedTargetsFinder(PAGeDict):
                 toAppend.append(str(windowSum))
                 # Add ratio of abundance of cleavage site to sum within 5 bp 
                 # of the cleavage site in each direction
-                toAppend.append(str("%.3f" % float(int(cleavageSite[0])/windowSum)))
+                toAppend.append(str("%.6f" % float(int(cleavageSite[0])/windowSum)))
                 # Add category at cleavage site
                 toAppend.append(str(categoryScore))
                 # Append the p-value to the toAppend list
