@@ -1,7 +1,7 @@
 #!/usr/local/bin/python3
 
 ## revFerno: Reverse maps miRferno results to genome co-ordinates
-## Updated: version-0.9 09/07/2016
+## Updated: version-1.0 12/30/2017
 ## Property of Meyers Lab at University of Delaware
 ## Author: kakrana@udel.edu
 ## Author: pupatel@udel.edu
@@ -279,7 +279,7 @@ def RevMapCoord(ent): #### DOES THIS MODULE WORKS IF USER USES MULTIPLE LIBRARIE
             new_bind_site = '%s-%s' % (new_bind_site_start,new_bind_site_end)
         else:
             print ('Entry: %s in reverse strand: %s' % (ent[0:4],coord_dict_crick[gene_name]))
-            geno_end = coord_dict_crick[gene_name][1] ### Use for reverse mapping of negative genes
+            geno_end = coord_dict_crick[gene_name][2] ### Use for reverse mapping of negative genes
             #print('Looking for chr_id')
             chr_id = coord_dict_crick[gene_name][0]
             #print('chr_id found')
@@ -307,7 +307,7 @@ def RevMapCoord(ent): #### DOES THIS MODULE WORKS IF USER USES MULTIPLE LIBRARIE
             new_bind_site = '%s-%s' % (new_bind_site_start,new_bind_site_end)
         else:
             print ('Entry: %s in reverse strand: %s' % (ent[0:4],coord_dict_crick[gene_name]))
-            geno_end = coord_dict_crick[gene_name][1] ### Use for reverse mapping of negative genes
+            geno_end = coord_dict_crick[gene_name][2] ### Use for reverse mapping of negative genes
             #print('Looking for chr_id')
             chr_id = coord_dict_crick[gene_name][0]
             #print('chr_id found')
@@ -533,5 +533,11 @@ if __name__ == '__main__':
 ## Added compatibility to sPARTAv1.16 and above
 ## Modifed user input - now afile is provided for reverse mapping instead of lookup in folder
 ## Improved user experienece stuff, cleaned up the script
+
+## v0.9 -> v1.0
+## Fixed reverse mapping error (same as revFerno) - No valid triggers were being found at 'c' strand - In reverse mapping 
+#### function for crick strand genomic start site was beng used instead of genomic end to compute 
+#### new coordinates - Fixed by replacing geno_end    = coord_dict_crick[gene_name][1] with
+#### geno_end    = coord_dict_crick[gene_name][2] -  see the difference in coordinates
 
 
