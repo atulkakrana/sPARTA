@@ -1,5 +1,5 @@
 ## sPARTA: small RNA-PARE Target Analyzer public version 
-## Updated: version-1.21 12/01/2016
+## Updated: version-1.22 01/01/2017
 ## Property of Meyers Lab at University of Delaware
 ## Author: kakrana@udel.edu
 ## Author: rkweku@udel.edu
@@ -2202,7 +2202,7 @@ def genomicCoord(ent): ####
         new_bind_site       = '%s-%s' % (new_bind_site_start,new_bind_site_end)
     else:
         print ('Entry: %s in reverse strand: %s' % (ent[0:4],coord_dict_crick[gene_name]))
-        geno_end    = coord_dict_crick[gene_name][1] ### Use for reverse mapping of negative genes
+        geno_end    = coord_dict_crick[gene_name][2] ### Use for reverse mapping of negative genes
         #print('Looking for chr_id')
         chr_id      = coord_dict_crick[gene_name][0]
         #print('chr_id found')
@@ -2711,7 +2711,13 @@ if __name__ == '__main__':
 ## v1.20 -> 1.21
 ## Removed the stray rpy2 imports from main
 
-## v1.21 - v1.22[planned]
+## v1.21 -> 1.22
+## Fixed reverse mapping error (same as revFerno) - No valid triggers were being found at 'c' strand - In reverse mapping 
+#### function for crick strand genomic start site was beng used instead of genomic end to compute 
+#### new coordinates - Fixed by replacing geno_end    = coord_dict_crick[gene_name][1] with
+#### geno_end    = coord_dict_crick[gene_name][2] -  see the difference in coordinates
+
+## v1.22 - v1.23[planned]
 ## Optimization in Reza's part to improve speed
 ## Add chart function
 
