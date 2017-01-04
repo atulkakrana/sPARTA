@@ -1711,11 +1711,11 @@ def validatedTargetsFinder(PAGeDict):
                 toAppend.append(str(windowSum))
                 # Add ratio of abundance of cleavage site to sum within 5 bp 
                 # of the cleavage site in each direction
-                toAppend.append(str("%.6f" % float(int(cleavageSite[0])/windowSum)))
+                toAppend.append(str("%f" % float(int(cleavageSite[0])/windowSum)))
                 # Add category at cleavage site
                 toAppend.append(str(categoryScore))
                 # Append the p-value to the toAppend list
-                toAppend.append(str("%.6f" % pValue))
+                toAppend.append(str("%f" % pValue))
                 validatedTargets.append(toAppend)
     
     return(validatedTargets)
@@ -2062,7 +2062,7 @@ def writeValidatedTargetsFile(header, validatedTargets, outputFile):
     
     #
     for i in range(len(validatedTargets)):
-        validatedTargets[i].append("%.6f" % (float(validatedTargets[i][pValueIndex])/float(validatedTargets[i][windowRatioIndex])))
+        validatedTargets[i].append("%.4f" % (float(validatedTargets[i][pValueIndex])/float(validatedTargets[i][windowRatioIndex])))
 
     #
     correctedPValueIndex = len(validatedTargets[0]) - 1
@@ -2077,6 +2077,9 @@ def writeValidatedTargetsFile(header, validatedTargets, outputFile):
     # >= .25 for a tag to be considered
     if(args.noiseFilter):
         for target in validatedTargets:
+            target[windowRatioIndex] = '%.3f' % float(target[windowRatioIndex])
+            target[correctedPValueIndex] = '%.4f' % float(
+                target[correctedPValueIndex])
             # Include any target with pvalue <= .25 and with window ratio
             # >= .25
             if((float(target[correctedPValueIndex]) <= .25) and (float(target[
