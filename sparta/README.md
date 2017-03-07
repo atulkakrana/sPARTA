@@ -7,7 +7,7 @@ Citation        : Kakrana, A., Hammond, R., Patel, P., Nakano, M. & Meyers, B. C
 <html>
 <body>
 <h3><b>Description</b></h3>
-<b>s</b>mall RNA-<b>PA</b>RE <b>T</b>arget <b>A</b>nalyzer (sPARTA) is a tool which utilizes
+<b>s</b>mall RNA-<b>PAR</b>E <b>T</b>arget <b>A</b>nalyzer (sPARTA) is a tool which utilizes
 high-throughput sequencing to profile genome-wide cleavage products.
 sPARTA begins with a built-in parallelized target prediction module for plant
 miRNAs called</body></html> `miRferno`. <html><body>sPARTA as a whole utilizes multi-core servers to
