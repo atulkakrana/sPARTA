@@ -1,3 +1,9 @@
+##sPARTA        : **S**mall RNA-**PA**RE **T**arget **A**nalyzer
+Updated         : 01/01/2017    
+Version         : 1.22    
+Release         : https://github.com/atulkakrana/sPARTA/releases    
+Citation        : Kakrana, A., Hammond, R., Patel, P., Nakano, M. & Meyers, B. C. sPARTA: a parallelized pipeline for integrated analysis of plant miRNA and cleaved mRNA data sets, including new miRNA target-identification software. Nucleic Acids Res. gku693– (2014).  doi:10.1093/nar/gku693
+
 <html>
 <body>
 <h2>sPARTA</h2>
