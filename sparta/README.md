@@ -3,7 +3,8 @@
 <h2>sPARTA</h2>
 <b>s</b>mall RNA-<b>PA</b>RE <b>T</b>arget <b>A</b>nalyzer<br> 
 Updated: version-1.20 09/30/2016    
-Download link: https://github.com/atulkakrana/sPARTA.github/releases
+Download link: https://github.com/atulkakrana/sPARTA.github/releases    
+Citation: Kakrana, A., Hammond, R., Patel, P., Nakano, M. & Meyers, B. C. sPARTA: a parallelized pipeline for integrated analysis of plant miRNA and cleaved mRNA data sets, including new miRNA target-identification software. Nucleic Acids Res. gku693– (2014).  doi:10.1093/nar/gku693
 <h3><b>Description</b></h3>
 small RNA-PARE Target Analyzer (sPARTA) is a tool which utilizes
 high-throughput sequencing to profile genome-wide cleavage products.
