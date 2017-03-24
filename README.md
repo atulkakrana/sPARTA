@@ -1,4 +1,4 @@
-#sPARTA        : **S**mall RNA-**PA**RE **T**arget **A**nalyzer
+# sPARTA        : **S**mall RNA-**PA**RE **T**arget **A**nalyzer
 Updated         : 01/01/2017    
 Version         : 1.22    
 Release         : https://github.com/atulkakrana/sPARTA/releases    
