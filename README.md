@@ -19,6 +19,7 @@ footprint, imperative to achieve a full genome analysis.
 <b>sPARTA</b> requires bowtie2 in the PATH variable of the user account executing sPARTA<br>
 </body>
 </html>
+
 `bowtie2` <html><body>may be downloaded here http://bowtie-bio.sourceforge.net/bowtie2/index.shtml<br>
 
 sPARTA requires the following python3 functions to perform properly:<br></body></html>
@@ -153,10 +154,10 @@ python3 sPARTA.py -featureFile <featureFile.fa> -genomeFeature <0/1> -miRNAFile 
 <h3><b>Output</b></h3>
 </body>
 </html>
-1.PARE validation results for each library can be found in `output` folder under its corresponding library name. The `output` folder also contains a combined result file `AllLibValidatedUniq.csv` from all the libraries.
+**1.** PARE validation results for each library can be found in `output` folder under its corresponding library name. The `output` folder also contains a combined result file `AllLibValidatedUniq.csv` from all the libraries.
 Results from all libs were combined by removing redundant miRNA-target interaction with cleavage at same site.
 
-2.Target prediction results can be found in 'predicted' folder under the name
+**2.** Target prediction results can be found in 'predicted' folder under the name
 `All.targs.parsed.csv`
 
 ## Other scripts
