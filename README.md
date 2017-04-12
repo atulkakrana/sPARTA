@@ -31,7 +31,7 @@ These may easily be installed using (`python3`) </body></html>`PIP`. <html><body
 </body>
 </html>
 
-**1**. In case your libraries needs pre-processing i.e. adapter removal and trimming, use pre-processing script here: [https://github.com/atulkakrana/helper.github](https://github.com/atulkakrana/helper.github)
+**1**. In case your libraries needs pre-processing i.e. adapter removal and trimming, use pre-processing script here: [https://github.com/atulkakrana/preprocess.seq](https://github.com/atulkakrana/preprocess.seq)
 
 **2**.sPARTA uses file extensions to identify file types, naming meta-data and selectively cleaning up temp files. Therefore, it is recommended to have appropriate file extensions.
 For Ex. a genome/cDNA FASTA file should have `.fa` extension.
