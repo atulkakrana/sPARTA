@@ -154,6 +154,7 @@ python3 sPARTA.py -featureFile <featureFile.fa> -genomeFeature <0/1> -miRNAFile 
 <h3><b>Output</b></h3>
 </body>
 </html>
+
 **1.** PARE validation results for each library can be found in `output` folder under its corresponding library name. The `output` folder also contains a combined result file `AllLibValidatedUniq.csv` from all the libraries.
 Results from all libs were combined by removing redundant miRNA-target interaction with cleavage at same site.
 
