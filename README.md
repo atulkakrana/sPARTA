@@ -20,13 +20,13 @@ footprint, imperative to achieve a full genome analysis.
 </body>
 </html>
 
-`bowtie2` <html><body>may be downloaded here http://bowtie-bio.sourceforge.net/bowtie2/index.shtml<br>
+`bowtie2` - <html><body>http://bowtie-bio.sourceforge.net/bowtie2/index.shtml<br>
 
-sPARTA requires the following python3 functions to perform properly:<br></body></html>
-`numpy` - <html><body>http://www.numpy.org/<br></body></html>
-`scipy` - <html><body>http://www.scipy.org/<br>
+sPARTA requires the following `python3` functions to perform properly:<br></body></html>
+`numpy`   - <html><body>http://www.numpy.org/<br></body></html>
+`scipy`   - <html><body>http://www.scipy.org/<br>
 <br>
-These may easily be installed using (Python) </body></html>`PIP`. <html><body>Intructions to install</body></html>`PIP` -<html><body> https://pip.pypa.io/en/stable/installing.html<br>
+These may easily be installed using (`python3`) </body></html>`PIP`. <html><body>Intructions to install</body></html>`PIP` -<html><body> https://pip.pypa.io/en/stable/installing.html<br>
 <h3><b>Note</b></h3>
 </body>
 </html>
