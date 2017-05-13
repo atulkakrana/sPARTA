@@ -22,7 +22,7 @@ footprint, imperative to achieve a full genome analysis.
 
 `bowtie2` - <html><body>http://bowtie-bio.sourceforge.net/bowtie2/index.shtml<br>
 
-sPARTA requires the following `python3` functions to perform properly:<br></body></html>
+sPARTA requires the following `python3` packages to perform properly:<br></body></html>
 `numpy`   - <html><body>http://www.numpy.org/<br></body></html>
 `scipy`   - <html><body>http://www.scipy.org/<br>
 <br>
@@ -31,7 +31,7 @@ These may easily be installed using (`python3`) </body></html>`PIP`. <html><body
 </body>
 </html>
 
-**1**. In case your libraries needs pre-processing i.e. adapter removal and trimming, use pre-processing script here: [https://github.com/atulkakrana/preprocess.seq](https://github.com/atulkakrana/preprocess.seq)
+**1**. If your PARE/Degradome libraries needs pre-processing i.e. adapter removal and trimming, use our pre-processing script from here: [https://github.com/atulkakrana/preprocess.seq](https://github.com/atulkakrana/preprocess.seq)
 
 **2**.sPARTA uses file extensions to identify file types, naming meta-data and selectively cleaning up temp files. Therefore, it is recommended to have appropriate file extensions.
 For Ex. a genome/cDNA FASTA file should have `.fa` extension.
