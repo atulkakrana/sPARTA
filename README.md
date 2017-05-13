@@ -123,7 +123,7 @@ python3 sPARTA.py -genomeFile <genomeFile.fa> -annoType <GTF/GFF> -annoFile <ann
 ```
 **or**
 
-a user provided feature set (FASTA file with sequences of interest) is being analyzed:
+a user provided feature set (FASTA file with genes, intergenic regions or any other sequences of interest) is being analyzed:
 
 ```
 python3 sPARTA.py -featureFile <featureFile.fa> -genomeFeature <0/1> -miRNAFile <miRNAFile.fa> -libs <Lib_A.txt Lib_B.txt> -tarPred -tarScore --tag2FASTA --map2DD --validate
