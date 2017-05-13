@@ -33,14 +33,14 @@ These may easily be installed using (`python3`) </body></html>`PIP`. <html><body
 
 **1**. If your PARE/Degradome libraries needs pre-processing i.e. adapter removal and trimming, use our pre-processing script from here: [https://github.com/atulkakrana/preprocess.seq](https://github.com/atulkakrana/preprocess.seq)
 
-**2**.sPARTA uses file extensions to identify file types, naming meta-data and selectively cleaning up temp files. Therefore, it is recommended to have appropriate file extensions.
+**2**. sPARTA uses file extensions to identify file types, naming meta-data and selectively cleaning up temp files. Therefore, it is recommended to have appropriate file extensions.
 For Ex. a genome/cDNA FASTA file should have `.fa` extension.
 Please see 'Arguments' section (below) for recommended file extensions.
 
-**3**.Make sure that input fasta files do not have integers in name. For ex - test.1.fa or arabidopsis.new.2.4.fa
+**3**. Make sure that input fasta files do not have integers in name. For ex - test.1.fa or arabidopsis.new.2.4.fa
 Files with such names are deleted sometimes while cleanup operation
 
-**4**.All the input files 1) </body></html>`miRNAs` 2)`FASTA` file for genome or transcripts and 3) `degradome/PARE` in tag-count format should be in same directory, including sPARTA script
+**4**. All the input files 1) </body></html>`miRNAs` 2)`FASTA` file for genome or transcripts and 3) `degradome/PARE` in tag-count format should be in same directory, including sPARTA script
 <html>
 </body>
 <h3><b>Execution</b></h3>
@@ -48,7 +48,7 @@ Files with such names are deleted sometimes while cleanup operation
 execution. For the first execution, all steps must be performed, but
 once this has been completed, provided the miRNAs and genome are the same,
 the entire analysis will not need to be repeated.  <a href="https://github.com/sdeepti/atulChange/blob/master/README.md#examples">Examples</a> of such cases
-may be seen below.</p>
+are provided below.</p>
 <h3><b>Arguments</b></h3><br>
 <table>
 <tr>
