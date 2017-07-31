@@ -162,7 +162,7 @@ Results from all libs were combined by removing redundant miRNA-target interacti
 **2.** Target prediction results can be found in 'predicted' folder under the name
 `All.targs.parsed.csv`
 
-## Other scripts
+## Helper script(s)
 
 **revFernoMap.py** : This script generates new file with genomic co-ordinates for predicted targets i.e. targets in `All.targs.parsed.csv` file under the `predicted` folder. It is neither part of sPARTA nor required for prediction and/or validation of targets. Instead, it might be useful for specific studies that need genomic co-ordinates for predicted targets.
 
