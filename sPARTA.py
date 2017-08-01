@@ -92,7 +92,7 @@ if(((args.annoFile and not args.genomeFile) or (args.genomeFile and not
 
 # If annoType is provided and not GFF or GTF, report the error and exit
 if(args.annoType and args.annoType != 'GFF' and args.annoType != 'GTF'):
-    print("annoType must be either GFF3 or GTF")
+    print("annoType must be either GFF or GTF")
     exit()
 
 # If either the annotation file or annotation type is given without the other,
@@ -2235,7 +2235,52 @@ def writeValidatedTargetsFile(header, validatedTargets, outputFile):
                     else:
                         f.write(',')
 
-def resultUniq(filetag):
+def getAbundanceByLib(uniqTarget, validatedTargetsListByLib):
+    """Find if the given library has a match to the uniqRevmapped targets
+       and add the abundance of the library to the running list.
+
+    Args:
+        uniqTarget: Unique target to look for in the validatedTargetsListByLib
+        validatedTargets: List of lists with the validated targets in each
+            library
+
+    Returns:
+        List of abundances of the PARE signals present in this library at
+        the site of all uniqRevmapped targets if it is present. 0 if it 
+        does not exist in this library
+
+    """
+
+    abundanceList = []
+
+    # Loop through each library's targets to find if the uniqTarget
+    # exists in it
+    for libTargets in validatedTargetsListByLib:
+        # Store the length of the abundanceList before adding the abundance
+        abunListLen = len(abundanceList)
+
+        # Loop through all targets in this library
+        for target in libTargets:
+            # Store the identifying factors of the miRNA-target pair
+            mirName = target[0]
+            targetGene = target[1]
+            position = target[8]
+
+            # If the miRNA-target pair exists, store the abundance and break
+            # from this iteration of the loop
+            if(tuple((mirName, targetGene, position)) == uniqTarget):
+                abundanceList.append(str(target[9]))
+                break
+
+        # If the stored abunListLen from prior to the search for this 
+        # miRNA-target pair is unchanged, it did not exist for this library
+        # so store 0 for it in abundanceList
+        if(abunListLen == len(abundanceList)):
+            abundanceList.append('0')
+
+    return(abundanceList)
+
+def resultUniq(filetag, validatedTargets):
     
     """Read validated files for each library 
     and generate a single file with unique results"""
@@ -2269,6 +2314,11 @@ def resultUniq(filetag):
     parsed_in.sort(key=lambda k: (-int(k[9]) )) ## PARE and corrected p-value
     parsed_in.sort(key=lambda k: (float(k[14]) ))
 
+    # Add in columns to the header to include columns for the PARE library
+    # abundances
+    for filename in fls:
+        header += ',%s PARE Abundance' % filename
+
     uniqRevmapped   = './output/All.libs.validated.uniq.csv'
     fh_output2      = open(uniqRevmapped, 'w')
     fh_output2.write("%s\n" % header)
@@ -2281,6 +2331,9 @@ def resultUniq(filetag):
         genename = ent[1] ## To avoid different variations of same gene to be counted as uniq
         lookup=tuple((ent[0],genename,ent[8]))## miR name + Target Gene + position of cleavage on gene
         if lookup not in added_keys:
+            # Append library abundances to ent tow rite to the output file
+            libAbundances = getAbundanceByLib(lookup, validatedTargets)
+            ent.extend(libAbundances)
             fh_output2.write('%s\n' % (','.join(ent)))
             parsed_out_count+=1
             added_keys.add(lookup)## Once a new entry is found it is recorded so as to compare and neglect further entries
@@ -2823,7 +2876,9 @@ def main():
         baseCountsFile = readFile('baseCounts.mem')
         baseCounts = int(baseCountsFile[0])
         baseCountsOffTagLen = int(baseCountsFile[1])
-    
+
+        validatedTargetsListByLib = []
+
         for tagCountFilename in args.libs:
             PAGeIndexDict = {}
             # Variable holding all hits > 2
@@ -2890,15 +2945,16 @@ def main():
                 print("No targets could be validated for the set of miRNAs "\
                       "in lib %s." % library)
 
+            validatedTargetsListByLib.append(validatedTargets)
+
         ## Revmap results
         if args.featureFile: ## User used feature file no reverse mapping
             filetag         = '_validated'
-            uniqRevmapped   = resultUniq(filetag) # uniqRevmapped='./output/AllLibValidatedUniq.csv'
+            uniqRevmapped   = resultUniq(filetag, validatedTargetsListByLib) # uniqRevmapped='./output/AllLibValidatedUniq.csv'
         else:
             ReverseMapping()
             filetag         = 'revmapped.csv'
-            uniqRevmapped   = resultUniq(filetag) # uniqRevmapped='./output/AllLibValidatedUniq.csv'
-
+            uniqRevmapped   = resultUniq(filetag, validatedTargetsListByLib) # uniqRevmapped='./output/AllLibValidatedUniq.csv'
 
     PredEnd = time.time()
     print ('\n\nIndexing and Prediction run time is %s\n\n' % (round(PredEnd-PredStart,2)))
@@ -2937,7 +2993,6 @@ if __name__ == '__main__':
 
 ## v1.04 -> 1.05
 ## Fixed compatibility to Bowtie 2.4.4 - Tested OK
-
 ## v1.06 -> v1.07
 ## A final report with unique targets from all libraries generated
 ## Fix: Fixes Bug: 010115 - GFF file lines start with ##
