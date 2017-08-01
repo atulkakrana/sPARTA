@@ -156,13 +156,13 @@ python3 sPARTA.py -featureFile <featureFile.fa> -genomeFeature <0/1> -miRNAFile 
 </body>
 </html>
 
-**1.** PARE validation results for each library can be found in `output` folder under its corresponding library name. The `output` folder also contains a combined result file `AllLibValidatedUniq.csv` from all the libraries.
+**1.** PARE validation results for each library can be found in `output` folder under its corresponding library name. The `output` folder also contains a combined result file `All.libs.validated.uniq.csv` from all the libraries.
 Results from all libs were combined by removing redundant miRNA-target interaction with cleavage at same site.
 
 **2.** Target prediction results can be found in 'predicted' folder under the name
 `All.targs.parsed.csv`
 
-## Other scripts
+## Helper script(s)
 
 **revFernoMap.py** : This script generates new file with genomic co-ordinates for predicted targets i.e. targets in `All.targs.parsed.csv` file under the `predicted` folder. It is neither part of sPARTA nor required for prediction and/or validation of targets. Instead, it might be useful for specific studies that need genomic co-ordinates for predicted targets.
 
