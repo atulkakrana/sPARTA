@@ -1,5 +1,5 @@
 ## sPARTA: small RNA-PARE Target Analyzer public version 
-## Updated: version-1.25 05/13/2017
+## Updated: version-1.26 08/19/2017
 ## Author: kakrana@udel.edu
 ## Author: rkweku@udel.edu
 
@@ -66,6 +66,9 @@ parser.add_argument('-accel', default='Y', help='Y to use '\
 parser.add_argument('--standardCleave', action='store_true', default=False,
     help='Flag to use standard cleave locations (10th, 11th and 12th '\
     'positions), or rules more specific to miRNA size')
+parser.add_argument('--viewerdata', action='store_true', default=False,
+    help='Flag to prepare additional SAM files for mapped PARE reads and '\
+    'BED file validated targets from all libraries combined')
 
 ### Developer Options ###
 parser.add_argument('--generateFasta', action='store_false', default=False,
@@ -561,7 +564,7 @@ def extractFeatures(genomeFile,chromoDict,chromoLenDict,genome_info,genome_info_
     print("\n#### Fn: extractFeatures ###############################")
     alist = []##
     for i in range(0, int(len(genome_info))+1): #
-        #print (i)
+        # print (i)
         gene1       = (genome_info[i])
         gene2       = (genome_info[i+1])
         gene_type   = 'inter' #
@@ -577,6 +580,7 @@ def extractFeatures(genomeFile,chromoDict,chromoLenDict,genome_info,genome_info_
         else:
             if tuple(gene1[0:2]) not in alist:#
                 print ('--Caching gene coords for chromosome: %s and strand: %s' % (gene1[0], gene1[1]))
+                # print(gene1,gene2)
                 alist.append((gene1[0:2]))
                 inter_start1    = 1
                 inter_end1      = int(gene1[3])-1#
@@ -586,17 +590,20 @@ def extractFeatures(genomeFile,chromoDict,chromoLenDict,genome_info,genome_info_
                     inter_start2    = int(gene1[4])+1 ## From end of first gene of chromosome
                     inter_end2      = int(gene2[3])-1 ## Till start of second gene
                     
-                    if gene1[1]     == 'w': ##The gene is on positive strand so upstream
+                    if gene1[1]     == 'w': ## The gene is on positive strand so upstream
                         inter_name1 = ('%s_up'      % (gene1[2]))
                         inter_name2 = ('%s_up'      % (gene2[2]))
-                    else: ##Its on negative strand
+                    else: ## Gene is on negative strand
                         inter_name1 = ('%s_down'    % (gene1[2]))
                         inter_name2 = ('%s_up'      % (gene1[2]))
 
+
+                    # print(gene1[0],gene1[1],inter_name1,inter_start1,inter_end1,gene_type)
+                    # print(gene2[0],gene2[1],inter_name2,inter_start2,inter_end2,gene_type)
                     genome_info_inter.append((gene1[0],gene1[1],inter_name1,inter_start1,inter_end1,gene_type))
                     genome_info_inter.append((gene2[0],gene2[1],inter_name2,inter_start2,inter_end2,gene_type))
 
-                ## If the first two genes are not from same strand i.e. there is only one gene on this chromosme and strand
+                ## If the "first two" genes are not from same strand i.e. there is only one gene on this chromosome and strand
                 else: ## Intergenic from end of chromosome/scaffold
                     inter_start2    = int(gene1[4])+1 ## From end of first gene of chromosome
                     # inter_end2      = '-' ### Till end of chromosome
@@ -617,21 +624,24 @@ def extractFeatures(genomeFile,chromoDict,chromoLenDict,genome_info,genome_info_
                         inter_name1 = ('%s_down'    % (gene1[2]))
                         inter_name2 = ('%s_up'      % (gene1[2]))                    
                     
+                    # print(gene1[0],gene1[1],inter_name1,inter_start1,inter_end1,gene_type)
+                    # print(gene1[0],gene1[1],inter_name2,inter_start2,inter_end2,gene_type)
                     genome_info_inter.append((gene1[0],gene1[1],inter_name1,inter_start1,inter_end1,gene_type))
                     genome_info_inter.append((gene1[0],gene1[1],inter_name2,inter_start2,inter_end2,gene_type))
 
             else:
-                if gene1[0] == gene2[0] and gene1[1] == gene2[1]: ### If chr_id and strands are equal than find intergenic.
-                    inter_start = int(gene1[4])+1#
-                    inter_end   = int(gene2[3])-1 #
+                if gene1[0] == gene2[0] and gene1[1] == gene2[1]: ### If chr_id and strands are same than find intergenic.
+                    inter_start = int(gene1[4])+1
+                    inter_end   = int(gene2[3])-1
                     if gene2[1] == 'w': #
                         inter_name = ('%s_up' % (gene2[2]))
                     else:
                         ## reverse strand
                         inter_name = ('%s_up' % (gene1[2]))
+                    # print(gene2[0],gene2[1],inter_name,inter_start,inter_end,gene_type)
                     genome_info_inter.append((gene2[0],gene2[1],inter_name,inter_start,inter_end,gene_type))
                 
-                else: #
+                else:
                     inter_start = int(gene1[4])+1#
                     # inter_end   = '-' ## Different from MPPP as no table ro query for end of chromosome in public version
                     try:
@@ -646,8 +656,9 @@ def extractFeatures(genomeFile,chromoDict,chromoLenDict,genome_info,genome_info_
                     if gene1[1] == 'w':
                         inter_name = ('%s_down' % (gene1[2]))
                     else: 
-                        inter_name = ('%s_up' % (gene1[2]))                    
-                    genome_info_inter.append((gene1[0],gene1[1],inter_name,inter_start,inter_end,gene_type)) ##Chr_id, strand
+                        inter_name = ('%s_up' % (gene1[2]))
+                    # print(gene1[0],gene1[1],inter_name,inter_start,inter_end2,gene_type)
+                    genome_info_inter.append((gene1[0],gene1[1],inter_name,inter_start,inter_end2,gene_type)) ##Chr_id, strand
     
 
     ## Additional check for scaffolded genomes, if there are no genes in a scaffold it's whole seqeunce will be fetched as intergenic
@@ -1018,9 +1029,11 @@ def miRinput():
         
     return mirL ## miRs holds the list of miRNA name and query where as miRtable holds flag -table name or local
 
-## New version added - Apr1/15
 def tarFind4(frag):
-    
+    '''
+    ## New version added - Apr1/15
+    '''
+
     file_out = './predicted/%s.targ' % (frag.rpartition('.')[0]) ## Result File
     
     ### Make or select index
@@ -1077,8 +1090,10 @@ def tarFind4(frag):
         print ("Script exiting.......")
         sys.exit()
 
-## Deprecated - Apr-1 [Retained for backward compatibility]
 def tarParse3(targComb):
+    '''
+    ## Deprecated - Apr-1 [Retained for backward compatibility]
+    '''
     
     print ('\n**Target prediction results are being generated**')
     #
@@ -1214,13 +1229,15 @@ def tarParse3(targComb):
 
     return TarPred
 
-#### New Version added - Apr1/15
 def tarParse4(targComb):
 
-    ''' Modifying this function is worst nightmare of life - Needs cleaning
+    '''
+    New Version added - Apr1/15
+    Modifying this function is worst nightmare of life - Needs cleaning
     cutoffs w/o bulge or gap - 5MM + 1 wobble 
     bulge in miRNA - 1 bulge + 3MM
-    bulge in reference - 1bulge+4mm or 2 consequite bulges +3MM'''
+    bulge in reference - 1bulge+4mm or 2 consequite bulges +3MM
+    '''
     
     print ('\n**Target prediction results are being generated**')
     ## Input / Output file ######
@@ -2317,7 +2334,7 @@ def resultUniq(filetag, validatedTargets):
     # Add in columns to the header to include columns for the PARE library
     # abundances
     for filename in fls:
-        header += ',%s PARE Abundance' % filename
+        header += ',%s PARE Abundance' % filename.rsplit("_",2)[0]
 
     uniqRevmapped   = './output/All.libs.validated.uniq.csv'
     fh_output2      = open(uniqRevmapped, 'w')
@@ -2522,6 +2539,97 @@ def ReverseMapping():
 
     
     ### END OF REVERSE MAP ##########
+
+def viewer_data():
+    '''
+    Combine and reformat files to be viewed on viewer
+    PARE data to SAM file and target predictions to BED file
+    '''
+    print("\n#### Fn: viewerdata ######################################")
+
+    ##### Prepare SAM files for PARE library - This can't be done as we map to gene/intergenic features and not genome
+    # adir = "./dd_map"
+    # ## Check for folder
+    # if os.path.isdir(adir): ## Check to see its a file from bowtie and not tophat mapped folder - Untested
+    #     # print("Directory dd_map found")
+    #     pass
+    # else:
+    #     print("'dd_map' directory not found: %s" % (adir))
+    #     print("Please check if analysis terminated prematurely, or")
+    #     print("Script exiting...\n")
+    #     sys.exit()
+
+    # ## Make a folder
+    # viewer_folder = "viewerdata"
+    # shutil.rmtree("%s" % (viewer_folder),ignore_errors=True)
+    # os.mkdir("%s" % (viewer_folder))
+
+    # ## Check for files for library and combine
+    # for alib in args.libs:
+    #     print("Merging PARE map files for %s library" % (alib))
+    #     afiles = [file for file in os.listdir("%s" % (adir)) if file.startswith ('%s' % (alib))]
+    #     # print(len(afiles))
+        
+    #     if len(afiles) > 0:
+    #         PAREComb = './%s/%s.sam' % (viewer_folder,alib)
+    #         PARE_out = open(PAREComb ,'w')
+        
+    #         for x in afiles:
+    #             # print (x)
+    #             PAREmap = open('./dd_map/%s' % (x), 'r')
+    #             #targfile.readline()
+    #             data = PAREmap.read()
+    #             PAREmap.close()
+    #             PARE_out.write(data)
+    
+    #     else:
+    #         print("Read mapping file not found for %s library" % (alib))
+    #         print("Please contact developed here: https://github.com/atulkakrana/sPARTA/issues")
+    #         print("Skipping this file...\n")
+    #         pass
+
+    ##### Prepare BED file for targets ####
+    #######################################
+
+    ## Check for final combined file
+    targfile    = "./output/All.libs.validated.uniq.csv"
+    bedfile     = "./viewerdata/All.libs.validated.uniq.bed"
+    fh_out      = open(bedfile,'w')
+
+    if args.featureFile:
+        print("BED file not prepared for targets as there is no way to determine genomic coordinates for FASTA feature file")
+        pass
+
+    else:
+        ### Preapre BED file fo targets if Genome and GFF files were used
+        if os.path.isfile(targfile):
+            print("Prepareing BED file of validated targets\n")
+
+            fh_in       = open(targfile,'r')
+            fh_in.readline()
+            fileread    = fh_in.readlines()
+            fh_in.close()
+
+            for aline in fileread:
+                ent     = aline.strip("\n").split(",") 
+                achr    = ent[15]
+                astart  = ent[18]
+                aend    = ent[19]
+                aname   = "%s-%s-%s" % (ent[0],ent[1],ent[17])
+                ascore  = 0
+                astrand = ent[16].translate(str.maketrans("wc","+-"))
+                fh_out.write("%s\t%s\t%s\t%s\t%s\t%s\n" % (achr,astart,aend,aname,ascore,astrand))
+
+        else:
+            print("Combined output file for validated targets not found for %s library")
+            print("Please contact developed here: https://github.com/atulkakrana/sPARTA/issues")
+            print("Skipping preparing bed file for validated targets...\n")
+            pass
+
+        fh_out.close()
+
+
+    return None
 
 def dedup_process(alib):
     '''
@@ -2956,6 +3064,13 @@ def main():
             filetag         = 'revmapped.csv'
             uniqRevmapped   = resultUniq(filetag, validatedTargetsListByLib) # uniqRevmapped='./output/AllLibValidatedUniq.csv'
 
+    if args.viewerdata:
+        viewer_data()
+    else:
+        ## No viewer files prepared
+        pass
+
+
     PredEnd = time.time()
     print ('\n\nIndexing and Prediction run time is %s\n\n' % (round(PredEnd-PredStart,2)))
     fh_run.write('Indexing and Prediction run time is : %s seconds \n' % (round(PredEnd-PredStart,2)))
@@ -3081,9 +3196,22 @@ if __name__ == '__main__':
 ## Added checkuser function to pass message
 ## Added prints and formatted command-line info
 
+## v1.25 -> v1.26
+## Added the PARE abundance matrix for all libraries in the final report
+## Added a function to convert final validated targets to BED file
+## Fixed a typo in extractFeatures() where "inter_end" need to be updated to "inter_end2" to make use of chromosome
+#### dictionary introduced in v1.23
 
 
-## FUTURE DEVELOPMENT [Pending
+
+
+
+
+
+
+
+###############################
+## FUTURE DEVELOPMENT [Pending]
 ## Added a de-duplicator to sPARTA - No need to run tally - This needs to be integrated to sPARTA
 ## Fine tune paralleization in validation part
 ## Add degradome plots
