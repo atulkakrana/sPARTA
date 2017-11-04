@@ -1,5 +1,5 @@
 ## sPARTA: small RNA-PARE Target Analyzer public version 
-## Updated: version-1.26 11/05/2017
+## Updated: version-1.27 11/05/2017
 ## Author: kakrana@udel.edu
 ## Author: rkweku@udel.edu
 
@@ -3199,7 +3199,7 @@ if __name__ == '__main__':
 ## Added checkuser function to pass message
 ## Added prints and formatted command-line info
 
-## v1.25 -> v1.26
+## v1.25 -> v1.26 -> v1.27
 ## Added the PARE abundance matrix for all libraries in the final report
 ## Added a function to convert final validated targets to BED file
 ## Fixed a typo in extractFeatures() where "inter_end" need to be updated to "inter_end2" to make use of chromosome
