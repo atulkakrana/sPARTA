@@ -1,5 +1,5 @@
 ## sPARTA: small RNA-PARE Target Analyzer public version 
-## Updated: version-1.26 08/19/2017
+## Updated: version-1.26 11/05/2017
 ## Author: kakrana@udel.edu
 ## Author: rkweku@udel.edu
 
@@ -2727,18 +2727,15 @@ def coreReserve(cores):
     if cores == "Y":
         ## Automatic assignment of cores selected
         totalcores = int(multiprocessing.cpu_count())
-        if totalcores       == 1: ## As in free tier of Amazon web services
+
+        if totalcores     == 1:
             nproc = 1
-
-        elif totalcores     == 4: ## For quad core system
+        elif totalcores   == 4: ## For quad core system
             nproc = 3
-
-        elif totalcores     == 6: ## For hexa core system
+        elif totalcores   == 6: ## For hexa core system
             nproc = 5
-
         elif totalcores > 6 and totalcores <= 10: ## For octa core system and those with less than 10 cores
             nproc = 7
-
         else:
             nproc = int(totalcores*0.85)
     else:
@@ -3208,8 +3205,6 @@ if __name__ == '__main__':
 ## Fixed a typo in extractFeatures() where "inter_end" need to be updated to "inter_end2" to make use of chromosome
 #### dictionary introduced in v1.23
 ## Added vcore == 1 compatibility, in case user has AWS free tier account which has just one core
-
-
 
 
 ###############################
